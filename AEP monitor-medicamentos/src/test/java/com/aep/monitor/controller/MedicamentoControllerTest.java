@@ -1,6 +1,7 @@
 package com.aep.monitor.controller;
 
 import com.aep.monitor.exception.MedicamentoNaoEncontradoException;
+import com.aep.monitor.exception.PacienteNaoEncontradoException;
 import com.aep.monitor.model.Medicamento;
 import com.aep.monitor.service.MedicamentoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,14 +32,14 @@ class MedicamentoControllerTest {
     private MedicamentoService service;
 
     private Medicamento medicamentoValido() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         m.setId("1");
         return m;
     }
 
     @Test
     void deveCadastrarMedicamentoComDadosValidos() throws Exception {
-        Medicamento medicamento = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento medicamento = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         Medicamento salvo = medicamentoValido();
         when(service.cadastrar(any(Medicamento.class))).thenReturn(salvo);
 
@@ -47,7 +48,7 @@ class MedicamentoControllerTest {
                         .content(objectMapper.writeValueAsString(medicamento)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value("1"))
-                .andExpect(jsonPath("$.nomePaciente").value("Maria"));
+                .andExpect(jsonPath("$.pacienteId").value("pac-1"));
     }
 
     @Test
@@ -64,13 +65,24 @@ class MedicamentoControllerTest {
 
     @Test
     void deveRetornarBadRequestQuandoHorarioForaDoFormato() throws Exception {
-        Medicamento invalido = new Medicamento("Maria", "Dipirona", "500mg", "25:99");
+        Medicamento invalido = new Medicamento("pac-1", "Dipirona", "500mg", "25:99");
 
         mockMvc.perform(post("/medicamentos")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalido)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.horario").exists());
+    }
+
+    @Test
+    void deveRetornarNotFoundAoCadastrarComPacienteInexistente() throws Exception {
+        Medicamento medicamento = new Medicamento("pac-x", "Dipirona", "500mg", "08:00");
+        when(service.cadastrar(any(Medicamento.class))).thenThrow(new PacienteNaoEncontradoException("pac-x"));
+
+        mockMvc.perform(post("/medicamentos")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(medicamento)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -84,18 +96,18 @@ class MedicamentoControllerTest {
 
     @Test
     void deveListarMedicamentosDeUmPaciente() throws Exception {
-        when(service.listarPorPaciente("Maria")).thenReturn(List.of(medicamentoValido()));
+        when(service.listarPorPaciente("pac-1")).thenReturn(List.of(medicamentoValido()));
 
-        mockMvc.perform(get("/medicamentos/paciente/Maria"))
+        mockMvc.perform(get("/medicamentos/paciente/pac-1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nomePaciente").value("Maria"));
+                .andExpect(jsonPath("$[0].pacienteId").value("pac-1"));
     }
 
     @Test
     void deveRetornarListaVaziaQuandoPacienteNaoTemMedicamentos() throws Exception {
-        when(service.listarPorPaciente("Ninguem")).thenReturn(List.of());
+        when(service.listarPorPaciente("pac-sem-remedio")).thenReturn(List.of());
 
-        mockMvc.perform(get("/medicamentos/paciente/Ninguem"))
+        mockMvc.perform(get("/medicamentos/paciente/pac-sem-remedio"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$").isEmpty());
@@ -118,6 +130,27 @@ class MedicamentoControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.mensagem").exists())
                 .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void deveConsultarHistoricoDeDosesDeUmMedicamento() throws Exception {
+        Medicamento medicamento = medicamentoValido();
+        medicamento.marcarComoTomado();
+        when(service.buscarPorId("1")).thenReturn(medicamento);
+
+        mockMvc.perform(get("/medicamentos/1/historico"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].dataHora").exists());
+    }
+
+    @Test
+    void deveRetornarNotFoundAoConsultarHistoricoDeIdInexistente() throws Exception {
+        when(service.buscarPorId("999")).thenThrow(new MedicamentoNaoEncontradoException("999"));
+
+        mockMvc.perform(get("/medicamentos/999/historico"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

@@ -19,14 +19,24 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MedicamentoNaoEncontradoException.class)
-    public ResponseEntity<Map<String, Object>> tratarNaoEncontrado(MedicamentoNaoEncontradoException ex) {
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> tratarNaoEncontrado(RecursoNaoEncontradoException ex) {
         Map<String, Object> corpo = new HashMap<>();
         corpo.put("timestamp", Instant.now().toString());
         corpo.put("status", HttpStatus.NOT_FOUND.value());
         corpo.put("erro", "Recurso não encontrado");
         corpo.put("mensagem", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(corpo);
+    }
+
+    @ExceptionHandler(PacienteComMedicamentosVinculadosException.class)
+    public ResponseEntity<Map<String, Object>> tratarConflito(PacienteComMedicamentosVinculadosException ex) {
+        Map<String, Object> corpo = new HashMap<>();
+        corpo.put("timestamp", Instant.now().toString());
+        corpo.put("status", HttpStatus.CONFLICT.value());
+        corpo.put("erro", "Conflito");
+        corpo.put("mensagem", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(corpo);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

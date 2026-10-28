@@ -1,8 +1,10 @@
 package com.aep.monitor.service;
 
 import com.aep.monitor.exception.MedicamentoNaoEncontradoException;
+import com.aep.monitor.exception.PacienteNaoEncontradoException;
 import com.aep.monitor.model.Medicamento;
 import com.aep.monitor.repository.MedicamentoRepository;
+import com.aep.monitor.repository.PacienteRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,12 +20,17 @@ import java.util.List;
 public class MedicamentoService {
 
     private final MedicamentoRepository repository;
+    private final PacienteRepository pacienteRepository;
 
-    public MedicamentoService(MedicamentoRepository repository) {
+    public MedicamentoService(MedicamentoRepository repository, PacienteRepository pacienteRepository) {
         this.repository = repository;
+        this.pacienteRepository = pacienteRepository;
     }
 
     public Medicamento cadastrar(Medicamento medicamento) {
+        if (!pacienteRepository.existsById(medicamento.getPacienteId())) {
+            throw new PacienteNaoEncontradoException(medicamento.getPacienteId());
+        }
         medicamento.setId(null);
         return repository.save(medicamento);
     }
@@ -32,8 +39,8 @@ public class MedicamentoService {
         return repository.findAll();
     }
 
-    public List<Medicamento> listarPorPaciente(String nomePaciente) {
-        return repository.findByNomePaciente(nomePaciente);
+    public List<Medicamento> listarPorPaciente(String pacienteId) {
+        return repository.findByPacienteId(pacienteId);
     }
 
     public Medicamento buscarPorId(String id) {

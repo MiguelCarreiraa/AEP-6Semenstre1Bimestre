@@ -2,6 +2,7 @@ package com.aep.monitor.controller;
 
 import com.aep.monitor.dto.AtualizarHorarioRequest;
 import com.aep.monitor.model.Medicamento;
+import com.aep.monitor.model.RegistroDose;
 import com.aep.monitor.service.MedicamentoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,6 +26,7 @@ public class MedicamentoController {
     @Operation(summary = "Cadastrar um novo medicamento")
     @ApiResponse(responseCode = "201", description = "Medicamento cadastrado com sucesso")
     @ApiResponse(responseCode = "400", description = "Dados inválidos")
+    @ApiResponse(responseCode = "404", description = "Paciente não encontrado")
     @PostMapping
     public ResponseEntity<Medicamento> cadastrar(@Valid @RequestBody Medicamento medicamento) {
         Medicamento salvo = service.cadastrar(medicamento);
@@ -38,11 +40,11 @@ public class MedicamentoController {
         return ResponseEntity.ok(service.listarTodos());
     }
 
-    @Operation(summary = "Listar os medicamentos de um paciente pelo nome")
+    @Operation(summary = "Listar os medicamentos de um paciente")
     @ApiResponse(responseCode = "200", description = "Lista de medicamentos do paciente")
-    @GetMapping("/paciente/{nomePaciente}")
-    public ResponseEntity<List<Medicamento>> listarPorPaciente(@PathVariable String nomePaciente) {
-        return ResponseEntity.ok(service.listarPorPaciente(nomePaciente));
+    @GetMapping("/paciente/{pacienteId}")
+    public ResponseEntity<List<Medicamento>> listarPorPaciente(@PathVariable String pacienteId) {
+        return ResponseEntity.ok(service.listarPorPaciente(pacienteId));
     }
 
     @Operation(summary = "Buscar um medicamento por id")
@@ -51,6 +53,14 @@ public class MedicamentoController {
     @GetMapping("/{id}")
     public ResponseEntity<Medicamento> buscarPorId(@PathVariable String id) {
         return ResponseEntity.ok(service.buscarPorId(id));
+    }
+
+    @Operation(summary = "Consultar o histórico de doses tomadas de um medicamento")
+    @ApiResponse(responseCode = "200", description = "Histórico de doses (lista de subdocumentos)")
+    @ApiResponse(responseCode = "404", description = "Medicamento não encontrado")
+    @GetMapping("/{id}/historico")
+    public ResponseEntity<List<RegistroDose>> historico(@PathVariable String id) {
+        return ResponseEntity.ok(service.buscarPorId(id).getHistoricoDoses());
     }
 
     @Operation(summary = "Atualizar o horário de um medicamento")

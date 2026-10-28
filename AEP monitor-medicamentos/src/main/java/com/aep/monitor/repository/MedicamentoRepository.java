@@ -7,5 +7,7 @@ import java.util.List;
 
 public interface MedicamentoRepository extends MongoRepository<Medicamento, String> {
 
-    List<Medicamento> findByNomePaciente(String nomePaciente);
+    List<Medicamento> findByPacienteId(String pacienteId);
+
+    boolean existsByPacienteId(String pacienteId);
 }

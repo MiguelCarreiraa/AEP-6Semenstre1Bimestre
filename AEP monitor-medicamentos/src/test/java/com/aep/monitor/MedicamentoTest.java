@@ -31,9 +31,9 @@ class MedicamentoTest {
 
     @Test
     void deveCriarMedicamentoComDadosValidos() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
 
-        assertEquals("Maria", m.getNomePaciente());
+        assertEquals("pac-1", m.getPacienteId());
         assertEquals("Dipirona", m.getNomeMedicamento());
         assertEquals("500mg", m.getDosagem());
         assertEquals("08:00", m.getHorario());
@@ -44,7 +44,14 @@ class MedicamentoTest {
     }
 
     @Test
-    void deveAcusarViolacaoQuandoNomePacienteVazio() {
+    void deveComecarComHistoricoDeDosesVazio() {
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
+        assertNotNull(m.getHistoricoDoses());
+        assertTrue(m.getHistoricoDoses().isEmpty());
+    }
+
+    @Test
+    void deveAcusarViolacaoQuandoPacienteIdVazio() {
         Medicamento m = new Medicamento("", "Dipirona", "500mg", "08:00");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
         assertFalse(violacoes.isEmpty());
@@ -52,49 +59,49 @@ class MedicamentoTest {
 
     @Test
     void deveAcusarViolacaoQuandoMedicamentoNulo() {
-        Medicamento m = new Medicamento("Maria", null, "500mg", "08:00");
+        Medicamento m = new Medicamento("pac-1", null, "500mg", "08:00");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
         assertFalse(violacoes.isEmpty());
     }
 
     @Test
     void deveAcusarViolacaoQuandoDosagemVazia() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "  ", "08:00");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "  ", "08:00");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
         assertFalse(violacoes.isEmpty());
     }
 
     @Test
     void deveAcusarViolacaoQuandoHorarioVazio() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
         assertFalse(violacoes.isEmpty());
     }
 
     @Test
     void deveAcusarViolacaoQuandoHorarioForaDoFormato() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "25:99");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "25:99");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
         assertFalse(violacoes.isEmpty());
     }
 
     @Test
     void deveAcusarViolacaoQuandoHorarioComTextoLivre() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "de manhã");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "de manhã");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
         assertFalse(violacoes.isEmpty());
     }
 
     @Test
     void naoDeveAcusarViolacaoParaHorarioValidoNoLimiteDoDia() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "23:59");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "23:59");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
         assertTrue(violacoes.isEmpty());
     }
 
     @Test
     void deveMarcarEDesmarcarComoTomado() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
 
         m.marcarComoTomado();
         assertTrue(m.isTomado());
@@ -104,32 +111,63 @@ class MedicamentoTest {
     }
 
     @Test
+    void deveAdicionarRegistroAoHistoricoQuandoMarcarComoTomado() {
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
+
+        m.marcarComoTomado();
+
+        assertEquals(1, m.getHistoricoDoses().size());
+        assertNotNull(m.getHistoricoDoses().get(0).getDataHora());
+    }
+
+    @Test
+    void devePermitirMultiplosRegistrosNoHistoricoAoMarcarVariasVezes() {
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
+
+        m.marcarComoTomado();
+        m.marcarComoTomado();
+
+        assertEquals(2, m.getHistoricoDoses().size());
+    }
+
+    @Test
+    void desmarcarComoTomadoNaoDeveRemoverHistorico() {
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
+
+        m.marcarComoTomado();
+        m.desmarcarComoTomado();
+
+        assertFalse(m.isTomado());
+        assertEquals(1, m.getHistoricoDoses().size());
+    }
+
+    @Test
     void deveAtualizarHorario() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         m.setHorario("09:30");
         assertEquals("09:30", m.getHorario());
     }
 
     @Test
     void deveAtualizarIdViaSetter() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         m.setId("abc123");
         assertEquals("abc123", m.getId());
     }
 
     @Test
     void toStringDeveConterCamposPrincipais() {
-        Medicamento m = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         String texto = m.toString();
-        assertTrue(texto.contains("Maria"));
+        assertTrue(texto.contains("pac-1"));
         assertTrue(texto.contains("Dipirona"));
     }
 
     @Test
     void doisMedicamentosComMesmoIdDevemSerIguais() {
-        Medicamento a = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento a = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         a.setId("1");
-        Medicamento b = new Medicamento("Outro Nome", "Outro Remédio", "1g", "20:00");
+        Medicamento b = new Medicamento("pac-2", "Outro Remédio", "1g", "20:00");
         b.setId("1");
 
         assertEquals(a, b);
@@ -138,9 +176,9 @@ class MedicamentoTest {
 
     @Test
     void doisMedicamentosComIdDiferenteNaoDevemSerIguais() {
-        Medicamento a = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento a = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         a.setId("1");
-        Medicamento b = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento b = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         b.setId("2");
 
         assertNotEquals(a, b);

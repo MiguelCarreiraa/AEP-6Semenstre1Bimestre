@@ -5,12 +5,16 @@ import jakarta.validation.constraints.Pattern;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
  * Representa um medicamento cadastrado para um paciente.
- * Estrutura simples e homogênea, conforme exigido na 1ª entrega da AEP
- * (uma única coleção NoSQL, documentos sem aninhamento).
+ * Referencia um Paciente por pacienteId (relacionamento entre as coleções
+ * "medicamentos" e "pacientes") e mantém historicoDoses como lista de
+ * subdocumentos com o registro de cada vez que a dose foi tomada.
  */
 @Document(collection = "medicamentos")
 public class Medicamento {
@@ -20,8 +24,8 @@ public class Medicamento {
     @Id
     private String id;
 
-    @NotBlank(message = "Nome do paciente é obrigatório")
-    private String nomePaciente;
+    @NotBlank(message = "Paciente é obrigatório")
+    private String pacienteId;
 
     @NotBlank(message = "Nome do medicamento é obrigatório")
     private String nomeMedicamento;
@@ -35,15 +39,18 @@ public class Medicamento {
 
     private boolean tomado;
 
+    private List<RegistroDose> historicoDoses = new ArrayList<>();
+
     public Medicamento() {
     }
 
-    public Medicamento(String nomePaciente, String nomeMedicamento, String dosagem, String horario) {
-        this.nomePaciente = nomePaciente;
+    public Medicamento(String pacienteId, String nomeMedicamento, String dosagem, String horario) {
+        this.pacienteId = pacienteId;
         this.nomeMedicamento = nomeMedicamento;
         this.dosagem = dosagem;
         this.horario = horario;
         this.tomado = false;
+        this.historicoDoses = new ArrayList<>();
     }
 
     public String getId() {
@@ -54,12 +61,12 @@ public class Medicamento {
         this.id = id;
     }
 
-    public String getNomePaciente() {
-        return nomePaciente;
+    public String getPacienteId() {
+        return pacienteId;
     }
 
-    public void setNomePaciente(String nomePaciente) {
-        this.nomePaciente = nomePaciente;
+    public void setPacienteId(String pacienteId) {
+        this.pacienteId = pacienteId;
     }
 
     public String getNomeMedicamento() {
@@ -90,8 +97,17 @@ public class Medicamento {
         return tomado;
     }
 
+    public List<RegistroDose> getHistoricoDoses() {
+        return historicoDoses;
+    }
+
+    public void setHistoricoDoses(List<RegistroDose> historicoDoses) {
+        this.historicoDoses = historicoDoses != null ? historicoDoses : new ArrayList<>();
+    }
+
     public void marcarComoTomado() {
         this.tomado = true;
+        this.historicoDoses.add(new RegistroDose(Instant.now()));
     }
 
     public void desmarcarComoTomado() {
@@ -115,11 +131,12 @@ public class Medicamento {
     public String toString() {
         return "Medicamento{" +
                 "id='" + id + '\'' +
-                ", nomePaciente='" + nomePaciente + '\'' +
+                ", pacienteId='" + pacienteId + '\'' +
                 ", nomeMedicamento='" + nomeMedicamento + '\'' +
                 ", dosagem='" + dosagem + '\'' +
                 ", horario='" + horario + '\'' +
                 ", tomado=" + tomado +
+                ", historicoDoses=" + historicoDoses +
                 '}';
     }
 }

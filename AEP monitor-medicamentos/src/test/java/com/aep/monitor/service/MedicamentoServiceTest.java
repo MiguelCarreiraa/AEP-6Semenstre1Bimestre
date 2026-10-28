@@ -1,8 +1,10 @@
 package com.aep.monitor.service;
 
 import com.aep.monitor.exception.MedicamentoNaoEncontradoException;
+import com.aep.monitor.exception.PacienteNaoEncontradoException;
 import com.aep.monitor.model.Medicamento;
 import com.aep.monitor.repository.MedicamentoRepository;
+import com.aep.monitor.repository.PacienteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +25,9 @@ class MedicamentoServiceTest {
     @Mock
     private MedicamentoRepository repository;
 
+    @Mock
+    private PacienteRepository pacienteRepository;
+
     @InjectMocks
     private MedicamentoService service;
 
@@ -30,14 +35,15 @@ class MedicamentoServiceTest {
 
     @BeforeEach
     void setUp() {
-        medicamento = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        medicamento = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         medicamento.setId("1");
     }
 
     @Test
     void deveCadastrarZerandoIdEDelegandoParaRepositorio() {
-        Medicamento novo = new Medicamento("Maria", "Dipirona", "500mg", "08:00");
+        Medicamento novo = new Medicamento("pac-1", "Dipirona", "500mg", "08:00");
         novo.setId("id-que-deve-ser-ignorado");
+        when(pacienteRepository.existsById("pac-1")).thenReturn(true);
         when(repository.save(any(Medicamento.class))).thenReturn(medicamento);
 
         Medicamento resultado = service.cadastrar(novo);
@@ -45,6 +51,15 @@ class MedicamentoServiceTest {
         assertNull(novo.getId());
         assertEquals("1", resultado.getId());
         verify(repository).save(novo);
+    }
+
+    @Test
+    void deveLancarExcecaoAoCadastrarComPacienteInexistente() {
+        Medicamento novo = new Medicamento("pac-x", "Dipirona", "500mg", "08:00");
+        when(pacienteRepository.existsById("pac-x")).thenReturn(false);
+
+        assertThrows(PacienteNaoEncontradoException.class, () -> service.cadastrar(novo));
+        verify(repository, never()).save(any());
     }
 
     @Test
@@ -59,12 +74,12 @@ class MedicamentoServiceTest {
 
     @Test
     void deveListarPorPaciente() {
-        when(repository.findByNomePaciente("Maria")).thenReturn(List.of(medicamento));
+        when(repository.findByPacienteId("pac-1")).thenReturn(List.of(medicamento));
 
-        List<Medicamento> resultado = service.listarPorPaciente("Maria");
+        List<Medicamento> resultado = service.listarPorPaciente("pac-1");
 
         assertEquals(1, resultado.size());
-        assertEquals("Maria", resultado.get(0).getNomePaciente());
+        assertEquals("pac-1", resultado.get(0).getPacienteId());
     }
 
     @Test
@@ -109,6 +124,7 @@ class MedicamentoServiceTest {
         Medicamento resultado = service.marcarComoTomado("1");
 
         assertTrue(resultado.isTomado());
+        assertEquals(1, resultado.getHistoricoDoses().size());
     }
 
     @Test
