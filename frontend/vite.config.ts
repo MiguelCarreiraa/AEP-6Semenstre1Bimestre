@@ -1,15 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// O frontend chama "/api/..." e o Vite repassa para o Spring Boot (porta 8080),
-// removendo o prefixo "/api". Assim não é preciso configurar CORS no backend.
+// O backend Spring não tem CORS configurado, então o Vite faz o proxy:
+// o front chama /api/... e o dev server repassa para http://localhost:8080/...
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.API_URL ?? 'http://localhost:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

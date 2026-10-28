@@ -210,9 +210,15 @@ textarea {
   position: absolute;
   right: calc(var(--gutter) - 6px);
   top: 50%;
-  transform: translateY(-50%);
+  /* alinhado à linha da data; volta para a barra quando ela fica compacta */
+  transform: translateY(calc(-50% + 68px));
+  transition: transform 200ms var(--ease-out);
   display: flex;
   gap: 4px;
+}
+
+.navbar.is-compact .navbar-trailing {
+  transform: translateY(-50%);
 }
 
 .nav-icon-button {
@@ -240,6 +246,22 @@ textarea {
 .large-title h1 {
   font: 700 2.125rem/1.1 var(--font-display); /* 34pt */
   letter-spacing: -0.025em; /* tracking negativo em tamanhos grandes */
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.brand-name {
+  font: 700 1.0625rem/1 var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.brand-accent {
+  color: var(--blue);
 }
 
 .large-title-sub {

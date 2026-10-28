@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
+import { Brand } from './Logo';
 
 interface NavBarProps {
   title: string;
@@ -37,6 +38,7 @@ export function NavBar({ title, subtitle, trailing }: NavBarProps) {
         </div>
       </div>
       <header className="large-title">
+        <Brand />
         {subtitle && <p className="large-title-sub">{subtitle}</p>}
         <h1>{title}</h1>
         <div ref={sentinel} className="large-title-sentinel" />

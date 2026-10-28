@@ -1,184 +1,238 @@
-# Monitor de Medicamentos
+# DoseCerta — Monitor de Medicamentos
+
+**DoseCerta** é o nome da marca do aplicativo. PoC da AEP 2026.2 (Engenharia de Software, UniCesumar): API REST em Java/Spring Boot com
+MongoDB (NoSQL) para cadastrar pacientes e seus medicamentos e registrar cada dose tomada,
+com uma interface web de demonstração em React.
 
 ## Problema
-Pacientes em tratamento contínuo — especialmente idosos e pessoas com doenças
-crônicas — frequentemente esquecem horários de medicação ou perdem o controle
-sobre quais remédios já tomaram no dia. Isso pode levar a doses duplicadas,
-esquecimentos perigosos e piora do quadro de saúde.
+Pacientes em tratamento contínuo — especialmente idosos e pessoas com doenças crônicas —
+frequentemente esquecem horários de medicação ou perdem o controle sobre quais remédios já
+tomaram no dia. Isso pode levar a doses duplicadas, esquecimentos perigosos e piora do quadro
+de saúde.
 
 ## ODS relacionado
-**ODS 3 — Saúde e Bem-Estar**: a solução contribui para garantir vidas
-saudáveis e promover o bem-estar, ajudando pacientes e cuidadores a
-gerenciar tratamentos medicamentosos de forma organizada.
+**ODS 3 — Saúde e Bem-Estar**: a solução contribui para garantir vidas saudáveis e promover o
+bem-estar, ajudando pacientes e cuidadores a gerenciar tratamentos medicamentosos de forma
+organizada.
 
 ## Público-alvo
-Pacientes em tratamento contínuo e seus cuidadores (familiares ou
-profissionais de saúde domiciliar).
+Pacientes em tratamento contínuo e seus cuidadores (familiares ou profissionais de saúde
+domiciliar).
 
-## Tecnologias utilizadas
-- **Java 17**
-- **Spring Boot 3** (`spring-boot-starter-web`, `spring-boot-starter-data-mongodb`,
-  `spring-boot-starter-validation`)
-- **MongoDB** (banco de dados NoSQL, rodando em container Docker)
-- **springdoc-openapi** (Swagger UI gerado a partir dos controllers REST)
-- **Maven** (gerenciamento de dependências e build)
-- **JUnit 5** + **Mockito** (testes automatizados)
-- **JaCoCo** (relatório de cobertura de testes, com verificação automática de mínimo)
-- **GitHub Actions** (CI: roda os testes e valida a cobertura a cada push/PR)
+## Evolução entre as entregas
 
-## Arquitetura
-O código é organizado em camadas, para manter responsabilidades separadas:
-
-```
-controller/  → mapeia rotas HTTP para chamadas de serviço (sem lógica de negócio)
-service/     → regras de negócio (buscar, validar existência, atualizar estado)
-repository/  → acesso ao MongoDB (Spring Data)
-model/       → entidade persistida na coleção "medicamentos"
-dto/         → dados de entrada para operações específicas (ex: atualizar horário)
-exception/   → exceções de domínio + tratamento centralizado de erros da API
-```
-
-Quando um medicamento não é encontrado, o service lança
-`MedicamentoNaoEncontradoException`, que é convertida automaticamente pelo
-`GlobalExceptionHandler` em uma resposta `404` estruturada, por exemplo:
-
-```json
-{
-  "timestamp": "2026-09-08T13:00:00Z",
-  "status": 404,
-  "erro": "Recurso não encontrado",
-  "mensagem": "Medicamento não encontrado com id: 999"
-}
-```
-
-Erros de validação de campos (`@Valid`) também são centralizados e retornam
-um corpo simples de `campo → mensagem`, por exemplo:
-
-```json
-{
-  "horario": "Horário deve estar no formato HH:mm (ex: 08:00)"
-}
-```
-
-## Funcionalidades da 1ª entrega
-A API expõe os seguintes endpoints REST em `/medicamentos`, testáveis pelo Swagger UI:
-
-| Verbo | Rota | Ação |
+| | 1ª entrega | 2ª entrega (atual) |
 |---|---|---|
-| POST | `/medicamentos` | Cadastrar medicamento |
-| GET | `/medicamentos` | Listar todos |
-| GET | `/medicamentos/paciente/{nomePaciente}` | Listar medicamentos de um paciente |
-| GET | `/medicamentos/{id}` | Buscar por id |
-| PATCH | `/medicamentos/{id}/horario` | Atualizar horário |
-| PATCH | `/medicamentos/{id}/tomado` | Marcar como tomado |
-| DELETE | `/medicamentos/{id}` | Remover |
+| Coleções MongoDB | 1 (`medicamentos`) | 2 (`pacientes` e `medicamentos`) |
+| Paciente | texto solto (`nomePaciente`) | entidade própria, referenciada por `pacienteId` |
+| Relacionamento entre coleções | não havia | `medicamentos.pacienteId` → `pacientes._id`, imposto pela aplicação |
+| Objeto complexo | documento plano | `historicoDoses`: lista de subdocumentos dentro de cada medicamento |
+| Controle de dose | flag `tomado` | flag `tomado` + histórico com data/hora de cada dose |
+| Interface | Swagger UI | Swagger UI + front-end web (`frontend/`) |
 
-O campo `horario` é validado no formato `HH:mm` (ex: `08:00`, `23:59`); valores
-fora desse padrão são rejeitados com `400` antes de chegar ao banco.
+## Tecnologias
+**Back-end** (`AEP monitor-medicamentos/`)
+- Java 17 e Spring Boot 3 (`web`, `data-mongodb`, `validation`)
+- MongoDB 7 (NoSQL) em container Docker
+- springdoc-openapi (Swagger UI gerado a partir dos controllers)
+- Maven, JUnit 5, Mockito
+- JaCoCo (cobertura, com verificação automática do mínimo de 70%)
+- GitHub Actions (CI)
 
-## Como executar
+**Front-end** (`frontend/`) — cliente de demonstração
+- React 19, TypeScript e Vite (detalhes em [`frontend/README.md`](frontend/README.md))
 
-### Pré-requisitos
-- Java 17+
-- Maven 3.8+
-- Docker (para rodar o MongoDB em container)
-
-### Passo a passo
-1. Subir o MongoDB via Docker Compose:
-   ```bash
-   docker compose up -d
-   ```
-2. Subir a API:
-   ```bash
-   mvn spring-boot:run
-   ```
-3. Acessar `http://localhost:8080/swagger-ui.html` e testar todos os endpoints
-   de `/medicamentos` diretamente pela interface do Swagger.
-
-Por padrão a aplicação conecta em `mongodb://localhost:27017/monitor_medicamentos`.
-Para usar outra instância (ex: MongoDB Atlas), defina a variável de ambiente
-`MONGO_URI` antes de subir a aplicação.
-
-## Como rodar os testes e gerar a cobertura
-Para rodar os testes e gerar o relatório de cobertura, sem travar o build:
-```bash
-mvn test
+## Arquitetura do back-end
 ```
-O relatório é gerado em:
+controller/  → rotas HTTP, sem regra de negócio
+service/     → regras de negócio (validar relacionamento, registrar dose)
+repository/  → acesso ao MongoDB (Spring Data)
+model/       → documentos: Paciente, Medicamento e o subdocumento RegistroDose
+dto/         → entrada de operações específicas (ex.: atualizar horário)
+exception/   → exceções de domínio e tratamento centralizado de erros da API
 ```
-target/site/jacoco/index.html
+Erros "não encontrado" (`MedicamentoNaoEncontradoException`, `PacienteNaoEncontradoException`)
+herdam de `RecursoNaoEncontradoException` e viram `404` em um único handler
+(`GlobalExceptionHandler`). Tentar remover paciente com medicamentos vira `409`. Erros de
+validação (`@Valid`) viram `400` com o corpo `{ "campo": "mensagem" }`.
+
+## Banco de dados NoSQL
+
+### Coleções
+| Coleção | Função |
+|---|---|
+| `pacientes` | Pessoas acompanhadas: `nome`, `contato`, `dataNascimento` (opcional) |
+| `medicamentos` | Medicamentos de um paciente: `pacienteId`, `nomeMedicamento`, `dosagem`, `horario` (HH:mm), `tomado` e `historicoDoses` |
+
+### Relacionamento entre coleções
 ```
-
-Para validar automaticamente a cobertura mínima exigida (**70%**), rode:
-```bash
-mvn verify
+pacientes (1) ───────< medicamentos (N)
+   _id          ←      pacienteId  (referência por id, tipo string)
 ```
-Esse comando **falha o build** se a cobertura ficar abaixo de 70% — é a
-evidência reproduzível de cobertura pedida no enunciado da AEP. O mesmo
-comando roda automaticamente a cada push/PR via GitHub Actions
-(`.github/workflows/ci.yml`).
+O MongoDB não garante integridade referencial, então a aplicação impõe as regras no service:
+- cadastrar medicamento com `pacienteId` inexistente → `404`;
+- remover paciente que ainda tem medicamentos → `409` (é preciso remover os medicamentos antes).
 
-## Estrutura do banco (1º semestre)
-Coleção única `medicamentos`, com documentos simples e homogêneos:
+Escolhemos **referência** (e não embutir os medicamentos no paciente) porque o medicamento é
+consultado e alterado sozinho (marcar dose, mudar horário) e a lista de um paciente pode crescer.
 
+### Objeto complexo: `historicoDoses`
+Lista de subdocumentos embutida em cada medicamento. Cada chamada a
+`PATCH /medicamentos/{id}/tomado` adiciona um registro `{ dataHora }`. Foi embutida porque
+pertence a um único medicamento e é sempre lida junto com ele. Isso responde ao problema da
+PoC: saber **quando** cada dose foi tomada, e não só o último estado.
+
+### Exemplos de documentos
+Como a API devolve (no MongoDB o `id` é o `_id` do tipo ObjectId e as datas são BSON Date):
+
+`pacientes`
 ```json
 {
-  "nomePaciente": "Maria",
-  "nomeMedicamento": "Dipirona",
-  "dosagem": "500mg",
-  "horario": "08:00",
-  "tomado": false
+  "id": "6ab913be42cb2d48f94d1dfc",
+  "nome": "Maria Silva",
+  "contato": "maria@email.com",
+  "dataNascimento": "1955-03-10"
 }
 ```
 
-A coleção é criada explicitamente com validação de schema (`$jsonSchema`) pelo
-script [`mongo-init/init.js`](mongo-init/init.js), executado automaticamente
-pelo MongoDB na primeira vez que o container sobe (via
-`docker-entrypoint-initdb.d`, configurado no `docker-compose.yml`). Isso
-garante que só documentos com os campos obrigatórios corretos sejam aceitos
-no banco. Há também um índice em `nomePaciente`, usado pelo endpoint de
-listagem por paciente.
+`medicamentos`
+```json
+{
+  "id": "6ab913be42cb2d48f94d1dfd",
+  "pacienteId": "6ab913be42cb2d48f94d1dfc",
+  "nomeMedicamento": "Losartana",
+  "dosagem": "50mg",
+  "horario": "08:00",
+  "tomado": true,
+  "historicoDoses": [
+    { "dataHora": "2026-09-27T13:01:59.659Z" },
+    { "dataHora": "2026-09-27T13:01:59.731Z" }
+  ]
+}
+```
 
-Para conferir a coleção e a validação direto no Mongo:
+### Criação das coleções
+O script [`mongo-init/init.js`](AEP%20monitor-medicamentos/mongo-init/init.js) cria as duas coleções
+com validação de schema (`$jsonSchema`, incluindo os itens do array `historicoDoses`) e um
+índice em `medicamentos.pacienteId`. Ele roda sozinho na primeira vez que o container sobe
+(`docker-entrypoint-initdb.d`, configurado no `docker-compose.yml`).
+
+Para conferir direto no Mongo:
 ```bash
 docker exec -it mongo-monitor mongosh monitor_medicamentos --eval "db.getCollectionInfos()"
 ```
 
-> Se o container do Mongo já foi criado antes desse script existir, o volume
-> de dados (`mongo-data`) já está inicializado e o script não roda de novo
-> automaticamente. Para forçar a recriação com o script:
+> Se o volume `mongo-data` já existia de uma versão anterior, o script não roda de novo.
+> Para recriar do zero (apaga os dados de teste, não o código):
 > ```bash
 > docker compose down -v
 > docker compose up -d
 > ```
-> (isso apaga os dados de teste já cadastrados no Mongo local — não afeta o código).
+
+## API REST
+Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+**Pacientes** (`/pacientes`)
+| Verbo | Rota | Ação | Respostas |
+|---|---|---|---|
+| POST | `/pacientes` | Cadastrar | 201, 400 |
+| GET | `/pacientes` | Listar todos | 200 |
+| GET | `/pacientes/{id}` | Buscar por id | 200, 404 |
+| DELETE | `/pacientes/{id}` | Remover | 204, 404, 409 (tem medicamentos) |
+
+**Medicamentos** (`/medicamentos`)
+| Verbo | Rota | Ação | Respostas |
+|---|---|---|---|
+| POST | `/medicamentos` | Cadastrar (valida o paciente) | 201, 400, 404 (paciente) |
+| GET | `/medicamentos` | Listar todos | 200 |
+| GET | `/medicamentos/paciente/{pacienteId}` | Listar os de um paciente | 200 |
+| GET | `/medicamentos/{id}` | Buscar por id | 200, 404 |
+| GET | `/medicamentos/{id}/historico` | Histórico de doses | 200, 404 |
+| PATCH | `/medicamentos/{id}/horario` | Atualizar horário (`HH:mm`) | 200, 400, 404 |
+| PATCH | `/medicamentos/{id}/tomado` | Registrar dose tomada | 200, 404 |
+| DELETE | `/medicamentos/{id}` | Remover | 204, 404 |
+
+## Como executar
+
+### Pré-requisitos
+Java 17+, Maven 3.8+, Docker e, para o front, Node 20+.
+
+### Back-end
+```bash
+cd "AEP monitor-medicamentos"
+docker compose up -d
+mvn spring-boot:run
+```
+A API sobe em `http://localhost:8080` e conecta em
+`mongodb://localhost:27017/monitor_medicamentos`. Para outra instância (ex.: Atlas), defina a
+variável de ambiente `MONGO_URI`.
+
+### Front-end (opcional)
+Com a API no ar, em outro terminal:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Abra `http://localhost:5173`. O Vite faz proxy de `/api` para `localhost:8080`, porque o
+back-end não habilita CORS.
+
+## Testes e cobertura
+```bash
+cd "AEP monitor-medicamentos"
+mvn verify
+```
+- **Ferramenta:** JaCoCo 0.8.11, configurado no `pom.xml`.
+- **Relatório:** `AEP monitor-medicamentos/target/site/jacoco/index.html`.
+- **Gate:** o `mvn verify` falha se a cobertura de **linhas** ficar abaixo de 70%. O mesmo
+  comando roda no GitHub Actions (`.github/workflows/ci.yml`) e publica o relatório como artefato.
+- **Última medição:** 77 testes, 0 falhas. Instruções 96%, linhas 99% (171 de 172), branches 68%.
+  As branches mais descobertas estão nos `equals`/`hashCode` do pacote `model`.
+- **Testes:** `MedicamentoTest` (18), `PacienteTest` (8), `RegistroDoseTest` (5),
+  `MedicamentoServiceTest` (12), `PacienteServiceTest` (7), `MedicamentoControllerTest` (19) e
+  `PacienteControllerTest` (8).
+
+**Escopo da cobertura:** a PoC medida é a API com o banco (`AEP monitor-medicamentos/`),
+excluída apenas a classe `main`. O front-end é um cliente de demonstração da API e **não possui
+testes automatizados**; o CI apenas verifica que ele compila (`npm run build`).
+
+## Metodologia de trabalho
+Kanban simples, com as tarefas das duas entregas e o que ainda falta em
+[`QUADRO_DE_TAREFAS.md`](QUADRO_DE_TAREFAS.md).
+
+## Versões das entregas
+| Entrega | Identificação |
+|---|---|
+| 1ª entrega | Estado do repositório na primeira publicação (coleção única `medicamentos`) |
+| 2ª entrega | Tag `v2.0.0` |
 
 ## Estrutura do projeto
 ```
-monitor-medicamentos/
+.
+├── README.md
+├── QUADRO_DE_TAREFAS.md
 ├── .github/workflows/ci.yml
-├── src/main/java/com/aep/monitor/
-│   ├── MonitorMedicamentosApplication.java
-│   ├── model/Medicamento.java
-│   ├── repository/MedicamentoRepository.java
-│   ├── service/MedicamentoService.java
-│   ├── controller/MedicamentoController.java
-│   ├── dto/AtualizarHorarioRequest.java
-│   └── exception/
-│       ├── MedicamentoNaoEncontradoException.java
-│       └── GlobalExceptionHandler.java
-├── src/main/resources/application.properties
-├── src/test/java/com/aep/monitor/
-│   ├── MedicamentoTest.java
-│   ├── controller/MedicamentoControllerTest.java
-│   └── service/MedicamentoServiceTest.java
-├── mongo-init/init.js
-├── docker-compose.yml
-├── pom.xml
-└── README.md
+├── AEP monitor-medicamentos/          (back-end)
+│   ├── pom.xml
+│   ├── docker-compose.yml
+│   ├── mongo-init/init.js
+│   └── src/
+│       ├── main/java/com/aep/monitor/
+│       │   ├── MonitorMedicamentosApplication.java
+│       │   ├── controller/   MedicamentoController, PacienteController
+│       │   ├── service/      MedicamentoService, PacienteService
+│       │   ├── repository/   MedicamentoRepository, PacienteRepository
+│       │   ├── model/        Medicamento, Paciente, RegistroDose
+│       │   ├── dto/          AtualizarHorarioRequest
+│       │   └── exception/    RecursoNaoEncontradoException (+ 2 filhas),
+│       │                     PacienteComMedicamentosVinculadosException, GlobalExceptionHandler
+│       ├── main/resources/application.properties
+│       └── test/java/com/aep/monitor/   testes de model, service e controller
+└── frontend/                          (React + Vite)
 ```
 
-## Próximos passos (2ª entrega)
-- Evoluir para múltiplas coleções (ex: pacientes relacionados aos medicamentos)
-- Adicionar histórico de doses tomadas (subdocumentos)
-- Ampliar testes e documentação técnica completa
+## Limitações conhecidas
+- A flag `tomado` não volta a `false`; o front calcula "tomado hoje" a partir de `historicoDoses`.
+- Não há trava contra registrar a mesma dose duas vezes (cada `PATCH /tomado` adiciona um registro).
+- Sem autenticação e sem CORS (o front depende do proxy do Vite).
+- O front-end não tem testes automatizados.
