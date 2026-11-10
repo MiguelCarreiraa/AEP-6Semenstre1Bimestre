@@ -1,238 +1,568 @@
-# DoseCerta — Monitor de Medicamentos
+# 💊 DoseCerta — Monitor de Medicamentos
 
-**DoseCerta** é o nome da marca do aplicativo. PoC da AEP 2026.2 (Engenharia de Software, UniCesumar): API REST em Java/Spring Boot com
-MongoDB (NoSQL) para cadastrar pacientes e seus medicamentos e registrar cada dose tomada,
-com uma interface web de demonstração em React.
+**DoseCerta** é uma Prova de Conceito (PoC) desenvolvida para a AEP 2026.2 do curso de Engenharia de Software da UniCesumar.
 
-## Problema
-Pacientes em tratamento contínuo — especialmente idosos e pessoas com doenças crônicas —
-frequentemente esquecem horários de medicação ou perdem o controle sobre quais remédios já
-tomaram no dia. Isso pode levar a doses duplicadas, esquecimentos perigosos e piora do quadro
-de saúde.
+A aplicação tem como objetivo auxiliar pacientes e cuidadores no gerenciamento de tratamentos medicamentosos, permitindo cadastrar pacientes, organizar medicamentos, acompanhar horários e registrar o histórico de doses tomadas.
 
-## ODS relacionado
-**ODS 3 — Saúde e Bem-Estar**: a solução contribui para garantir vidas saudáveis e promover o
-bem-estar, ajudando pacientes e cuidadores a gerenciar tratamentos medicamentosos de forma
-organizada.
+O projeto utiliza uma API REST desenvolvida em Java e Spring Boot, com persistência em MongoDB e uma interface web construída com React e TypeScript.
 
-## Público-alvo
-Pacientes em tratamento contínuo e seus cuidadores (familiares ou profissionais de saúde
-domiciliar).
+---
 
-## Evolução entre as entregas
+## 📑 Índice
 
-| | 1ª entrega | 2ª entrega (atual) |
-|---|---|---|
-| Coleções MongoDB | 1 (`medicamentos`) | 2 (`pacientes` e `medicamentos`) |
-| Paciente | texto solto (`nomePaciente`) | entidade própria, referenciada por `pacienteId` |
-| Relacionamento entre coleções | não havia | `medicamentos.pacienteId` → `pacientes._id`, imposto pela aplicação |
-| Objeto complexo | documento plano | `historicoDoses`: lista de subdocumentos dentro de cada medicamento |
-| Controle de dose | flag `tomado` | flag `tomado` + histórico com data/hora de cada dose |
-| Interface | Swagger UI | Swagger UI + front-end web (`frontend/`) |
+- [Sobre o projeto](#-sobre-o-projeto)
+- [Problema e justificativa](#-problema-e-justificativa)
+- [Objetivos de Desenvolvimento Sustentável](#-objetivos-de-desenvolvimento-sustentável)
+- [Público-alvo](#-público-alvo)
+- [Tecnologias utilizadas](#-tecnologias-utilizadas)
+- [Arquitetura do sistema](#-arquitetura-do-sistema)
+- [Banco de dados](#-banco-de-dados-nosql)
+- [Funcionalidades da API](#-funcionalidades-da-api)
+- [Validações implementadas](#-validações-implementadas)
+- [Como executar o projeto](#-como-executar-o-projeto)
+- [Testes e qualidade](#-testes-e-qualidade)
+- [Estrutura de diretórios](#-estrutura-de-diretórios)
+- [Evolução do projeto](#-evolução-do-projeto)
+- [Limitações conhecidas](#-limitações-conhecidas)
 
-## Tecnologias
-**Back-end** (`AEP monitor-medicamentos/`)
-- Java 17 e Spring Boot 3 (`web`, `data-mongodb`, `validation`)
-- MongoDB 7 (NoSQL) em container Docker
-- springdoc-openapi (Swagger UI gerado a partir dos controllers)
-- Maven, JUnit 5, Mockito
-- JaCoCo (cobertura, com verificação automática do mínimo de 70%)
-- GitHub Actions (CI)
+---
 
-**Front-end** (`frontend/`) — cliente de demonstração
-- React 19, TypeScript e Vite (detalhes em [`frontend/README.md`](frontend/README.md))
+## 📌 Sobre o projeto
 
-## Arquitetura do back-end
-```
-controller/  → rotas HTTP, sem regra de negócio
-service/     → regras de negócio (validar relacionamento, registrar dose)
-repository/  → acesso ao MongoDB (Spring Data)
-model/       → documentos: Paciente, Medicamento e o subdocumento RegistroDose
-dto/         → entrada de operações específicas (ex.: atualizar horário)
-exception/   → exceções de domínio e tratamento centralizado de erros da API
-```
-Erros "não encontrado" (`MedicamentoNaoEncontradoException`, `PacienteNaoEncontradoException`)
-herdam de `RecursoNaoEncontradoException` e viram `404` em um único handler
-(`GlobalExceptionHandler`). Tentar remover paciente com medicamentos vira `409`. Erros de
-validação (`@Valid`) viram `400` com o corpo `{ "campo": "mensagem" }`.
+O DoseCerta foi idealizado para oferecer uma maneira simples e organizada de acompanhar tratamentos medicamentosos.
 
-## Banco de dados NoSQL
+A aplicação permite:
 
-### Coleções
-| Coleção | Função |
+- Cadastrar e consultar pacientes.
+- Associar medicamentos aos respectivos pacientes.
+- Registrar nome, dosagem e horário dos medicamentos.
+- Atualizar horários de administração.
+- Registrar doses tomadas.
+- Consultar o histórico de administração de medicamentos.
+- Manter os registros organizados por paciente.
+
+O projeto está estruturado em duas partes principais:
+
+- **Back-end:** responsável pelas regras de negócio, validações, comunicação com o banco de dados e disponibilização dos endpoints REST.
+- **Front-end:** interface web para interação e demonstração das funcionalidades da API.
+
+## 🎯 Problema e justificativa
+
+Pacientes em tratamentos contínuos, especialmente idosos e pessoas com doenças crônicas, podem apresentar dificuldades para controlar os horários e a administração de seus medicamentos.
+
+O esquecimento de doses ou a falta de controle sobre os medicamentos já administrados pode ocasionar situações como:
+
+- Esquecimento de horários.
+- Administração duplicada de medicamentos.
+- Dificuldade para acompanhar tratamentos prolongados.
+- Falta de informações sobre doses anteriormente administradas.
+
+O DoseCerta busca contribuir para a organização dessas informações, oferecendo um sistema centralizado para o acompanhamento dos medicamentos e seus respectivos registros.
+
+## 🌍 Objetivos de Desenvolvimento Sustentável
+
+**ODS 3 — Saúde e Bem-Estar**
+
+O projeto está relacionado ao Objetivo de Desenvolvimento Sustentável 3 da Organização das Nações Unidas, que busca assegurar uma vida saudável e promover o bem-estar para todos.
+
+A proposta contribui para esse objetivo ao oferecer uma ferramenta de apoio à organização de tratamentos medicamentosos, auxiliando pacientes e cuidadores no acompanhamento de suas rotinas.
+
+## 👥 Público-alvo
+
+- Pacientes em tratamento medicamentoso contínuo.
+- Idosos que necessitam de acompanhamento de medicamentos.
+- Pessoas com doenças crônicas.
+- Familiares e cuidadores.
+- Profissionais de assistência domiciliar.
+
+---
+
+## 🛠️ Tecnologias utilizadas
+
+### Back-end
+
+| Tecnologia | Finalidade |
 |---|---|
-| `pacientes` | Pessoas acompanhadas: `nome`, `contato`, `dataNascimento` (opcional) |
-| `medicamentos` | Medicamentos de um paciente: `pacienteId`, `nomeMedicamento`, `dosagem`, `horario` (HH:mm), `tomado` e `historicoDoses` |
+| Java 17 | Linguagem de programação |
+| Spring Boot 3 | Desenvolvimento da API REST |
+| Spring Web | Criação dos endpoints HTTP |
+| Spring Data MongoDB | Persistência e acesso aos documentos |
+| Bean Validation | Validação dos dados recebidos |
+| MongoDB 7 | Banco de dados NoSQL |
+| Maven | Gerenciamento de dependências e build |
+| JUnit 5 | Testes automatizados |
+| Mockito | Simulação de dependências nos testes |
+| JaCoCo | Análise de cobertura de testes |
+| Swagger / OpenAPI | Documentação interativa da API |
+| GitHub Actions | Integração contínua (CI) |
+
+### Front-end
+
+| Tecnologia | Finalidade |
+|---|---|
+| React 19 | Construção da interface |
+| TypeScript | Tipagem estática |
+| Vite | Ambiente de desenvolvimento e build |
+
+Documentação específica do front-end: [frontend/README.md](frontend/README.md).
+
+---
+
+## 🏗️ Arquitetura do sistema
+
+O back-end utiliza uma arquitetura em camadas, separando responsabilidades para facilitar a manutenção, organização e evolução do código.
+
+```text
+Cliente (React / Swagger)
+          |
+          v
+     Controller
+          |
+          v
+       Service
+          |
+          v
+     Repository
+          |
+          v
+       MongoDB
+```
+
+### Responsabilidades das camadas
+
+| Camada | Responsabilidade |
+|---|---|
+| `controller/` | Receber requisições HTTP e retornar respostas da API. |
+| `service/` | Executar regras de negócio e validar operações. |
+| `repository/` | Realizar operações de persistência no MongoDB. |
+| `model/` | Representar os documentos e objetos do domínio. |
+| `dto/` | Representar os dados utilizados em operações específicas. |
+| `exception/` | Centralizar o tratamento de exceções da aplicação. |
+
+### Tratamento de erros
+
+A aplicação possui um tratamento centralizado de exceções por meio da classe `GlobalExceptionHandler`.
+
+Os principais códigos HTTP utilizados são:
+
+| Código | Significado | Situação |
+|---|---|---|
+| 200 | OK | Operação realizada com sucesso. |
+| 201 | Created | Cadastro realizado. |
+| 204 | No Content | Exclusão realizada. |
+| 400 | Bad Request | Dados inválidos. |
+| 404 | Not Found | Recurso não encontrado. |
+| 409 | Conflict | Operação incompatível com o estado atual dos dados. |
+
+As exceções de recursos não encontrados herdam de `RecursoNaoEncontradoException`, permitindo tratamento centralizado.
+
+A tentativa de remover um paciente que ainda possui medicamentos vinculados retorna HTTP 409.
+
+Os erros de validação retornam HTTP 400 com informações sobre o campo e a respectiva mensagem.
+
+---
+
+## 🗄️ Banco de dados NoSQL
+
+O DoseCerta utiliza o MongoDB 7, um banco de dados orientado a documentos.
+
+Diferentemente de bancos relacionais tradicionais, os dados são armazenados em documentos BSON organizados em coleções.
+
+### Coleções utilizadas
+
+| Coleção | Descrição |
+|---|---|
+| `pacientes` | Armazena os dados dos pacientes cadastrados. |
+| `medicamentos` | Armazena os medicamentos associados aos pacientes. |
+
+### Estrutura dos documentos
+
+**Paciente**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `_id` | ObjectId | Identificador do paciente. |
+| `nome` | String | Nome do paciente. |
+| `contato` | String | Contato do paciente. |
+| `dataNascimento` | Date | Data de nascimento (opcional). |
+
+**Medicamento**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `_id` | ObjectId | Identificador do medicamento. |
+| `pacienteId` | String | Identificador do paciente vinculado. |
+| `nomeMedicamento` | String | Nome do medicamento. |
+| `dosagem` | String | Dosagem informada. |
+| `horario` | String | Horário no formato HH:mm. |
+| `tomado` | Boolean | Indicador de dose tomada. |
+| `historicoDoses` | Array | Histórico de doses administradas. |
 
 ### Relacionamento entre coleções
+
+O relacionamento entre pacientes e medicamentos utiliza referências por identificador.
+
+```text
+       PACIENTES
+    ┌──────────────┐
+    │ _id          │
+    │ nome         │
+    │ contato      │
+    │ dataNascimento
+    └──────┬───────┘
+           │
+           │ 1:N
+           │
+    ┌──────▼───────┐
+    │ MEDICAMENTOS │
+    │ _id          │
+    │ pacienteId   │
+    │ nome         │
+    │ dosagem      │
+    │ horario      │
+    │ tomado       │
+    │ historicoDoses
+    └──────────────┘
 ```
-pacientes (1) ───────< medicamentos (N)
-   _id          ←      pacienteId  (referência por id, tipo string)
-```
-O MongoDB não garante integridade referencial, então a aplicação impõe as regras no service:
-- cadastrar medicamento com `pacienteId` inexistente → `404`;
-- remover paciente que ainda tem medicamentos → `409` (é preciso remover os medicamentos antes).
 
-Escolhemos **referência** (e não embutir os medicamentos no paciente) porque o medicamento é
-consultado e alterado sozinho (marcar dose, mudar horário) e a lista de um paciente pode crescer.
+A integridade referencial é controlada pela aplicação, por meio da camada de serviço.
 
-### Objeto complexo: `historicoDoses`
-Lista de subdocumentos embutida em cada medicamento. Cada chamada a
-`PATCH /medicamentos/{id}/tomado` adiciona um registro `{ dataHora }`. Foi embutida porque
-pertence a um único medicamento e é sempre lida junto com ele. Isso responde ao problema da
-PoC: saber **quando** cada dose foi tomada, e não só o último estado.
+Regras implementadas:
 
-### Exemplos de documentos
-Como a API devolve (no MongoDB o `id` é o `_id` do tipo ObjectId e as datas são BSON Date):
+- Não é permitido cadastrar medicamentos para pacientes inexistentes.
+- Não é permitido remover pacientes que ainda possuem medicamentos vinculados.
+- É necessário remover os medicamentos antes de excluir o respectivo paciente.
 
-`pacientes`
+A escolha por referências, em vez de incorporar todos os medicamentos dentro do documento do paciente, permite consultar e atualizar medicamentos individualmente.
+
+### Histórico de doses
+
+O campo `historicoDoses` armazena uma lista de subdocumentos dentro de cada medicamento.
+
+Cada registro contém a data e a hora em que a dose foi marcada como tomada.
+
+Exemplo:
+
 ```json
 {
-  "id": "6ab913be42cb2d48f94d1dfc",
-  "nome": "Maria Silva",
-  "contato": "maria@email.com",
-  "dataNascimento": "1955-03-10"
-}
-```
-
-`medicamentos`
-```json
-{
-  "id": "6ab913be42cb2d48f94d1dfd",
-  "pacienteId": "6ab913be42cb2d48f94d1dfc",
-  "nomeMedicamento": "Losartana",
-  "dosagem": "50mg",
-  "horario": "08:00",
-  "tomado": true,
   "historicoDoses": [
-    { "dataHora": "2026-09-27T13:01:59.659Z" },
-    { "dataHora": "2026-09-27T13:01:59.731Z" }
+    {
+      "dataHora": "2026-09-27T13:01:59.659Z"
+    },
+    {
+      "dataHora": "2026-09-28T13:05:10.000Z"
+    }
   ]
 }
 ```
 
-### Criação das coleções
-O script [`mongo-init/init.js`](AEP%20monitor-medicamentos/mongo-init/init.js) cria as duas coleções
-com validação de schema (`$jsonSchema`, incluindo os itens do array `historicoDoses`) e um
-índice em `medicamentos.pacienteId`. Ele roda sozinho na primeira vez que o container sobe
-(`docker-entrypoint-initdb.d`, configurado no `docker-compose.yml`).
+Esse formato permite consultar o histórico de administração, em vez de armazenar apenas o estado atual do medicamento.
 
-Para conferir direto no Mongo:
+### Inicialização do banco
+
+O projeto possui um script de inicialização:
+
+`AEP monitor-medicamentos/mongo-init/init.js`
+
+Esse arquivo configura as coleções com validação de schema por meio de `$jsonSchema` e cria um índice para `medicamentos.pacienteId`.
+
+A inicialização ocorre automaticamente na primeira execução do container MongoDB.
+
+Para conferir as coleções:
+
 ```bash
 docker exec -it mongo-monitor mongosh monitor_medicamentos --eval "db.getCollectionInfos()"
 ```
 
-> Se o volume `mongo-data` já existia de uma versão anterior, o script não roda de novo.
-> Para recriar do zero (apaga os dados de teste, não o código):
-> ```bash
-> docker compose down -v
-> docker compose up -d
-> ```
+**Importante:** se o volume `mongo-data` já existir, o script de inicialização não será executado novamente.
 
-## API REST
-Swagger UI: `http://localhost:8080/swagger-ui.html`
+Para recriar o banco de dados do zero:
 
-**Pacientes** (`/pacientes`)
-| Verbo | Rota | Ação | Respostas |
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+Atenção: o comando `down -v` remove os volumes e, consequentemente, os dados armazenados no banco.
+
+---
+
+## 🔌 Funcionalidades da API
+
+A API REST disponibiliza endpoints para gerenciamento de pacientes e medicamentos.
+
+### Documentação Swagger
+
+Com o back-end em execução, acesse:
+
+[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+O Swagger permite visualizar os endpoints, consultar parâmetros e realizar requisições diretamente pelo navegador.
+
+### Endpoints de pacientes
+
+Recurso: `/pacientes`
+
+| Método | Endpoint | Descrição | Respostas |
 |---|---|---|---|
-| POST | `/pacientes` | Cadastrar | 201, 400 |
-| GET | `/pacientes` | Listar todos | 200 |
-| GET | `/pacientes/{id}` | Buscar por id | 200, 404 |
-| DELETE | `/pacientes/{id}` | Remover | 204, 404, 409 (tem medicamentos) |
+| POST | `/pacientes` | Cadastrar paciente | 201, 400 |
+| GET | `/pacientes` | Listar pacientes | 200 |
+| GET | `/pacientes/{id}` | Buscar paciente por ID | 200, 404 |
+| DELETE | `/pacientes/{id}` | Remover paciente | 204, 404, 409 |
 
-**Medicamentos** (`/medicamentos`)
-| Verbo | Rota | Ação | Respostas |
+### Endpoints de medicamentos
+
+Recurso: `/medicamentos`
+
+| Método | Endpoint | Descrição | Respostas |
 |---|---|---|---|
-| POST | `/medicamentos` | Cadastrar (valida o paciente) | 201, 400, 404 (paciente) |
-| GET | `/medicamentos` | Listar todos | 200 |
-| GET | `/medicamentos/paciente/{pacienteId}` | Listar os de um paciente | 200 |
-| GET | `/medicamentos/{id}` | Buscar por id | 200, 404 |
-| GET | `/medicamentos/{id}/historico` | Histórico de doses | 200, 404 |
-| PATCH | `/medicamentos/{id}/horario` | Atualizar horário (`HH:mm`) | 200, 400, 404 |
+| POST | `/medicamentos` | Cadastrar medicamento | 201, 400, 404 |
+| GET | `/medicamentos` | Listar medicamentos | 200 |
+| GET | `/medicamentos/paciente/{pacienteId}` | Listar por paciente | 200 |
+| GET | `/medicamentos/{id}` | Buscar por ID | 200, 404 |
+| GET | `/medicamentos/{id}/historico` | Consultar histórico de doses | 200, 404 |
+| PATCH | `/medicamentos/{id}/horario` | Atualizar horário | 200, 400, 404 |
 | PATCH | `/medicamentos/{id}/tomado` | Registrar dose tomada | 200, 404 |
-| DELETE | `/medicamentos/{id}` | Remover | 204, 404 |
+| DELETE | `/medicamentos/{id}` | Remover medicamento | 204, 404 |
 
-## Como executar
+---
+
+## ✅ Validações implementadas
+
+O sistema utiliza Bean Validation para garantir maior consistência nos dados recebidos pela API.
+
+### Pacientes
+
+- Nome obrigatório.
+- Nome limitado a 120 caracteres.
+- Contato obrigatório.
+- Contato limitado a 100 caracteres.
+- Data de nascimento opcional.
+- Data de nascimento não pode ser futura.
+
+### Medicamentos
+
+- Nome obrigatório.
+- Nome limitado a 100 caracteres.
+- Dosagem obrigatória.
+- Dosagem limitada a 50 caracteres.
+- Horário obrigatório e validado no formato HH:mm.
+
+As validações são realizadas por meio de anotações como:
+
+- `@NotBlank`: impede campos de texto vazios.
+- `@Size`: estabelece limites de caracteres.
+- `@PastOrPresent`: impede datas futuras.
+- `@Pattern`: valida formatos específicos.
+
+Quando os dados não atendem às regras estabelecidas, a API retorna HTTP 400 com a descrição do problema.
+
+---
+
+## 🚀 Como executar o projeto
 
 ### Pré-requisitos
-Java 17+, Maven 3.8+, Docker e, para o front, Node 20+.
 
-### Back-end
+Antes de iniciar, verifique se os seguintes recursos estão instalados:
+
+| Ferramenta | Versão mínima |
+|---|---|
+| Java JDK | 17 |
+| Maven | 3.8+ |
+| Docker | Versão compatível com Docker Compose |
+| Node.js | 20+ |
+| npm | Compatível com a versão do Node.js |
+
+### 1. Clonar o repositório
+
+```bash
+git clone URL_DO_REPOSITORIO
+```
+
+Entre na pasta do projeto:
+
+```bash
+cd NOME_DO_REPOSITORIO
+```
+
+### 2. Iniciar o banco de dados
+
+Entre na pasta do back-end:
+
 ```bash
 cd "AEP monitor-medicamentos"
+```
+
+Inicie o container MongoDB:
+
+```bash
 docker compose up -d
+```
+
+### 3. Executar o back-end
+
+Ainda na pasta do back-end, execute:
+
+```bash
 mvn spring-boot:run
 ```
-A API sobe em `http://localhost:8080` e conecta em
-`mongodb://localhost:27017/monitor_medicamentos`. Para outra instância (ex.: Atlas), defina a
-variável de ambiente `MONGO_URI`.
 
-### Front-end (opcional)
-Com a API no ar, em outro terminal:
+A API estará disponível em:
+
+`http://localhost:8080`
+
+Conexão padrão com o MongoDB:
+
+`mongodb://localhost:27017/monitor_medicamentos`
+
+Para utilizar outra instância do MongoDB, configure a variável de ambiente `MONGO_URI`.
+
+### 4. Executar o front-end
+
+Em outro terminal, volte à raiz do repositório e entre na pasta `frontend`:
+
 ```bash
 cd frontend
+```
+
+Instale as dependências:
+
+```bash
 npm install
+```
+
+Inicie o servidor de desenvolvimento:
+
+```bash
 npm run dev
 ```
-Abra `http://localhost:5173`. O Vite faz proxy de `/api` para `localhost:8080`, porque o
-back-end não habilita CORS.
 
-## Testes e cobertura
+A interface estará disponível em:
+
+[http://localhost:5173](http://localhost:5173)
+
+O Vite utiliza um proxy para encaminhar as requisições de `/api` ao back-end, evitando a necessidade de habilitar CORS na configuração atual.
+
+---
+
+## 🧪 Testes e qualidade de código
+
+O projeto utiliza JUnit 5 e Mockito para executar testes automatizados nas diferentes camadas da aplicação.
+
+Para executar os testes e verificar a cobertura:
+
 ```bash
 cd "AEP monitor-medicamentos"
 mvn verify
 ```
-- **Ferramenta:** JaCoCo 0.8.11, configurado no `pom.xml`.
-- **Relatório:** `AEP monitor-medicamentos/target/site/jacoco/index.html`.
-- **Gate:** o `mvn verify` falha se a cobertura de **linhas** ficar abaixo de 70%. O mesmo
-  comando roda no GitHub Actions (`.github/workflows/ci.yml`) e publica o relatório como artefato.
-- **Última medição:** 77 testes, 0 falhas. Instruções 96%, linhas 99% (171 de 172), branches 68%.
-  As branches mais descobertas estão nos `equals`/`hashCode` do pacote `model`.
-- **Testes:** `MedicamentoTest` (18), `PacienteTest` (8), `RegistroDoseTest` (5),
-  `MedicamentoServiceTest` (12), `PacienteServiceTest` (7), `MedicamentoControllerTest` (19) e
-  `PacienteControllerTest` (8).
 
-**Escopo da cobertura:** a PoC medida é a API com o banco (`AEP monitor-medicamentos/`),
-excluída apenas a classe `main`. O front-end é um cliente de demonstração da API e **não possui
-testes automatizados**; o CI apenas verifica que ele compila (`npm run build`).
+### Ferramentas de qualidade
 
-## Metodologia de trabalho
-Kanban simples, com as tarefas das duas entregas e o que ainda falta em
-[`QUADRO_DE_TAREFAS.md`](QUADRO_DE_TAREFAS.md).
+| Ferramenta | Utilização |
+|---|---|
+| JUnit 5 | Execução dos testes automatizados. |
+| Mockito | Simulação de dependências. |
+| JaCoCo | Medição da cobertura de código. |
+| GitHub Actions | Execução automatizada do processo de integração contínua. |
 
-## Versões das entregas
+### Cobertura de testes
+
+O JaCoCo está configurado no `pom.xml`, com um limite mínimo de 70% de cobertura de linhas.
+
+O comando `mvn verify` verifica esse requisito e falha caso a cobertura fique abaixo do limite estabelecido.
+
+O relatório pode ser consultado após a execução:
+
+`AEP monitor-medicamentos/target/site/jacoco/index.html`
+
+O pipeline do GitHub Actions também executa as verificações do back-end e verifica se o front-end compila por meio de `npm run build`.
+
+**Escopo dos testes:** a cobertura do JaCoCo considera a API e suas camadas de aplicação, excluindo a classe principal de inicialização. O front-end ainda não possui testes automatizados.
+
+---
+
+## 📈 Evolução do projeto
+
+O DoseCerta passou por melhorias entre as entregas da AEP.
+
+| Recurso | 1ª entrega | 2ª entrega |
+|---|---|---|
+| Coleções MongoDB | Uma coleção (`medicamentos`) | Duas coleções (`pacientes` e `medicamentos`) |
+| Cadastro de pacientes | Nome armazenado diretamente no medicamento | Entidade própria |
+| Relacionamento | Sem referência estruturada | Referência por `pacienteId` |
+| Histórico de doses | Apenas flag `tomado` | Flag e histórico com data/hora |
+| Interface | Swagger UI | Swagger UI e aplicação React |
+| Validações | Validações iniciais | Regras adicionais para os cadastros |
+| Testes | Testes iniciais | Testes de model, service e controller |
+
+### Identificação das entregas
+
 | Entrega | Identificação |
 |---|---|
-| 1ª entrega | Estado do repositório na primeira publicação (coleção única `medicamentos`) |
-| 2ª entrega | Tag `v2.0.0` |
+| 1ª entrega | Estado do repositório na primeira publicação. |
+| 2ª entrega | Tag `v2.0.0`. |
 
-## Estrutura do projeto
-```
+---
+
+## 📁 Estrutura de diretórios
+
+```text
 .
 ├── README.md
 ├── QUADRO_DE_TAREFAS.md
-├── .github/workflows/ci.yml
-├── AEP monitor-medicamentos/          (back-end)
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── AEP monitor-medicamentos/
 │   ├── pom.xml
 │   ├── docker-compose.yml
-│   ├── mongo-init/init.js
+│   ├── mongo-init/
+│   │   └── init.js
+│   │
 │   └── src/
-│       ├── main/java/com/aep/monitor/
-│       │   ├── MonitorMedicamentosApplication.java
-│       │   ├── controller/   MedicamentoController, PacienteController
-│       │   ├── service/      MedicamentoService, PacienteService
-│       │   ├── repository/   MedicamentoRepository, PacienteRepository
-│       │   ├── model/        Medicamento, Paciente, RegistroDose
-│       │   ├── dto/          AtualizarHorarioRequest
-│       │   └── exception/    RecursoNaoEncontradoException (+ 2 filhas),
-│       │                     PacienteComMedicamentosVinculadosException, GlobalExceptionHandler
-│       ├── main/resources/application.properties
-│       └── test/java/com/aep/monitor/   testes de model, service e controller
-└── frontend/                          (React + Vite)
+│       ├── main/
+│       │   ├── java/com/aep/monitor/
+│       │   │   ├── controller/
+│       │   │   ├── service/
+│       │   │   ├── repository/
+│       │   │   ├── model/
+│       │   │   ├── dto/
+│       │   │   └── exception/
+│       │   │
+│       │   └── resources/
+│       │       └── application.properties
+│       │
+│       └── test/
+│           └── java/com/aep/monitor/
+│
+└── frontend/
+    ├── package.json
+    ├── README.md
+    └── src/
 ```
 
-## Limitações conhecidas
-- A flag `tomado` não volta a `false`; o front calcula "tomado hoje" a partir de `historicoDoses`.
-- Não há trava contra registrar a mesma dose duas vezes (cada `PATCH /tomado` adiciona um registro).
-- Sem autenticação e sem CORS (o front depende do proxy do Vite).
-- O front-end não tem testes automatizados.
+---
+
+## ⚠️ Limitações conhecidas
+
+Por se tratar de uma Prova de Conceito (PoC), algumas funcionalidades ainda não foram implementadas:
+
+- A flag `tomado` não retorna automaticamente para `false`; o front-end calcula o estado de tomada no dia a partir do histórico de doses.
+- Não existe bloqueio para registrar a mesma dose mais de uma vez.
+- O sistema ainda não possui autenticação de usuários.
+- O back-end não possui configuração própria de CORS; a comunicação atual depende do proxy do Vite.
+- O front-end ainda não possui testes automatizados.
+
+Essas limitações representam possíveis oportunidades de evolução em versões futuras.
+
+---
+
+## 🎓 Considerações finais
+
+O DoseCerta demonstra a aplicação prática de conceitos de Engenharia de Software, desenvolvimento de APIs REST, persistência de dados NoSQL, validação de informações, testes automatizados e integração entre back-end e front-end.
+
+A solução foi desenvolvida como parte das atividades acadêmicas da AEP 2026.2, com foco na construção de uma aplicação funcional e na aplicação dos conhecimentos adquiridos durante o curso.
+
+**DoseCerta — Mais organização e controle no acompanhamento de medicamentos.**
