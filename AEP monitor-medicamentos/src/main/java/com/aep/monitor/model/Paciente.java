@@ -1,6 +1,8 @@
 package com.aep.monitor.model;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -19,11 +21,14 @@ public class Paciente {
     private String id;
 
     @NotBlank(message = "Nome do paciente é obrigatório")
+    @Size(max = 120, message = "Nome do paciente deve ter no máximo 120 caracteres")
     private String nome;
 
     @NotBlank(message = "Contato do paciente é obrigatório")
+    @Size(max = 100, message = "Contato deve ter no máximo 100 caracteres")
     private String contato;
 
+    @PastOrPresent(message = "Data de nascimento não pode ser futura")
     private LocalDate dataNascimento;
 
     public Paciente() {

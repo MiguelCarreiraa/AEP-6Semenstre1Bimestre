@@ -25,3 +25,14 @@ container sobe. Para recriar do zero (apaga os dados de teste):
 docker compose down -v
 docker compose up -d
 ```
+
+### Validação dos campos de texto
+
+Os cadastros também limitam o tamanho dos campos para evitar entradas excessivamente longas:
+- Nome do paciente: até 120 caracteres.
+- Contato do paciente: até 100 caracteres.
+- Nome do medicamento: até 100 caracteres.
+- Dosagem: até 50 caracteres.
+
+Esses limites são verificados pela Bean Validation e retornam HTTP 400 quando não são respeitados.
+

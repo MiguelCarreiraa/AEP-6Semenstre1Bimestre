@@ -2,6 +2,7 @@ package com.aep.monitor.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -28,9 +29,11 @@ public class Medicamento {
     private String pacienteId;
 
     @NotBlank(message = "Nome do medicamento é obrigatório")
+    @Size(max = 100, message = "Nome do medicamento deve ter no máximo 100 caracteres")
     private String nomeMedicamento;
 
     @NotBlank(message = "Dosagem é obrigatória")
+    @Size(max = 50, message = "Dosagem deve ter no máximo 50 caracteres")
     private String dosagem;
 
     @NotBlank(message = "Horário é obrigatório")

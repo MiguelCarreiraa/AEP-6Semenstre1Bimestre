@@ -49,6 +49,17 @@ class PacienteTest {
     }
 
     @Test
+    void deveAcusarViolacaoQuandoDataNascimentoForFutura() {
+        Paciente p = new Paciente("Maria", "maria@email.com", LocalDate.now().plusDays(1));
+
+        Set<ConstraintViolation<Paciente>> violacoes = validator.validate(p);
+
+        assertTrue(violacoes.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("dataNascimento")
+                        && v.getMessage().equals("Data de nascimento não pode ser futura")));
+    }
+
+    @Test
     void deveAcusarViolacaoQuandoNomeVazio() {
         Paciente p = new Paciente("", "maria@email.com", null);
         assertFalse(validator.validate(p).isEmpty());
@@ -58,6 +69,22 @@ class PacienteTest {
     void deveAcusarViolacaoQuandoContatoVazio() {
         Paciente p = new Paciente("Maria", "", null);
         assertFalse(validator.validate(p).isEmpty());
+    }
+
+    @Test
+    void deveAcusarViolacaoQuandoNomeUltrapassarLimite() {
+        Paciente p = new Paciente("A".repeat(121), "maria@email.com", null);
+
+        assertTrue(validator.validate(p).stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("nome")));
+    }
+
+    @Test
+    void deveAcusarViolacaoQuandoContatoUltrapassarLimite() {
+        Paciente p = new Paciente("Maria", "a".repeat(101), null);
+
+        assertTrue(validator.validate(p).stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("contato")));
     }
 
     @Test
