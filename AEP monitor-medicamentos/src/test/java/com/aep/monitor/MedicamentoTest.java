@@ -72,6 +72,22 @@ class MedicamentoTest {
     }
 
     @Test
+    void deveAcusarViolacaoQuandoNomeUltrapassarLimite() {
+        Medicamento m = new Medicamento("pac-1", "A".repeat(101), "500mg", "08:00");
+
+        assertTrue(validator.validate(m).stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("nomeMedicamento")));
+    }
+
+    @Test
+    void deveAcusarViolacaoQuandoDosagemUltrapassarLimite() {
+        Medicamento m = new Medicamento("pac-1", "Dipirona", "A".repeat(51), "08:00");
+
+        assertTrue(validator.validate(m).stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("dosagem")));
+    }
+
+    @Test
     void deveAcusarViolacaoQuandoHorarioVazio() {
         Medicamento m = new Medicamento("pac-1", "Dipirona", "500mg", "");
         Set<ConstraintViolation<Medicamento>> violacoes = validator.validate(m);
