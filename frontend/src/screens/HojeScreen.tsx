@@ -3,9 +3,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
 import { useStore } from '../store';
 import { useNow } from '../hooks';
-import { NavBar, NavButton } from '../components/NavBar';
-import { Avatar, Button, CheckButton, EmptyState, Group, ProgressRing, Row } from '../components/ui';
-import { PersonIcon, PillFillIcon, PlusIcon } from '../components/Icons';
+import { Avatar, Button, CheckButton, EmptyState, Group, PageHeader, ProgressBar, Row, Tag } from '../components/ui';
+import { PersonIcon, PillIcon, PlusIcon } from '../components/Icons';
 import { agoraEmMinutos, doseDeHoje, formatHoje, formatHora, minutos, periodo, type Periodo } from '../utils';
 import type { Medicamento } from '../types';
 
@@ -32,24 +31,32 @@ export function HojeScreen() {
     (g) => g.itens.length > 0,
   );
 
-  const add = () => openSheet(pacientes.length ? { type: 'novo-medicamento', pacienteId: filtroAtivo ?? undefined } : { type: 'novo-paciente' });
+  const add = () =>
+    openSheet(
+      pacientes.length
+        ? { type: 'novo-medicamento', pacienteId: filtroAtivo ?? undefined }
+        : { type: 'novo-paciente' },
+    );
 
   return (
     <>
-      <NavBar
+      <PageHeader
         title="Hoje"
         subtitle={formatHoje(now)}
-        trailing={
-          <NavButton label="Adicionar medicamento" onClick={add}>
-            <PlusIcon width={22} height={22} />
-          </NavButton>
+        action={
+          <Button onClick={add} aria-label="Novo medicamento">
+            <PlusIcon width={16} height={16} />
+            <span>
+              Novo<span className="hide-sm"> medicamento</span>
+            </span>
+          </Button>
         }
       />
 
       {pacientes.length === 0 ? (
         <EmptyState
-          icon={<PersonIcon width={40} height={40} />}
-          title="Nenhum paciente ainda"
+          icon={<PersonIcon width={28} height={28} />}
+          title="Nenhum paciente cadastrado"
           message="Cadastre um paciente para começar a acompanhar os horários dos medicamentos."
           action={<Button onClick={() => openSheet({ type: 'novo-paciente' })}>Cadastrar paciente</Button>}
         />
@@ -75,7 +82,7 @@ export function HojeScreen() {
                   className={clsx('chip', filtroAtivo === p.id && 'is-active')}
                   onClick={() => setFiltro(p.id)}
                 >
-                  <Avatar id={p.id} nome={p.nome} size={22} />
+                  <Avatar nome={p.nome} size={22} />
                   {p.nome.split(' ')[0]}
                 </button>
               ))}
@@ -84,45 +91,56 @@ export function HojeScreen() {
 
           {lista.length === 0 ? (
             <EmptyState
-              icon={<PillFillIcon width={40} height={40} />}
+              icon={<PillIcon width={28} height={28} />}
               title="Nenhum medicamento"
               message="Adicione um medicamento com dosagem e horário para montar a agenda do dia."
               action={<Button onClick={add}>Adicionar medicamento</Button>}
             />
           ) : (
             <>
-              <div className="summary card">
-                <ProgressRing value={tomados} total={lista.length} />
-                <div className="summary-text">
-                  <p className="summary-count">
-                    <strong>{tomados}</strong> de {lista.length} doses
+              <section className="stats card" aria-label="Resumo do dia">
+                <div className="stat">
+                  <p className="stat-label">Doses de hoje</p>
+                  <p className="stat-value tnum">
+                    {tomados}
+                    <span> de {lista.length}</span>
                   </p>
+                  <ProgressBar value={tomados} total={lista.length} />
+                </div>
+                <div className="stat">
+                  <p className="stat-label">Próxima dose</p>
                   {tomados === lista.length ? (
-                    <p className="summary-sub is-done">Tudo certo por hoje.</p>
+                    <p className="stat-text is-done">Tudo certo por hoje</p>
                   ) : proxima ? (
-                    <p className="summary-sub">
-                      Próxima: <strong>{proxima.nomeMedicamento}</strong> às{' '}
-                      <span className="tnum">{proxima.horario}</span>
-                    </p>
+                    <>
+                      <p className="stat-text">{proxima.nomeMedicamento}</p>
+                      <p className="stat-sub">
+                        às <span className="tnum">{proxima.horario}</span> · {proxima.dosagem}
+                      </p>
+                    </>
                   ) : (
-                    <p className="summary-sub">Sem mais horários hoje.</p>
-                  )}
-                  {atrasados > 0 && (
-                    <p className="summary-late">
-                      {atrasados} {atrasados === 1 ? 'dose atrasada' : 'doses atrasadas'}
-                    </p>
+                    <p className="stat-text is-muted">Sem mais horários hoje</p>
                   )}
                 </div>
-              </div>
+                <div className="stat">
+                  <p className="stat-label">Em atraso</p>
+                  <p className={clsx('stat-value tnum', atrasados > 0 && 'is-late')}>{atrasados}</p>
+                  <p className="stat-sub">{atrasados === 1 ? 'dose pendente' : 'doses pendentes'}</p>
+                </div>
+              </section>
 
               {grupos.map((g) => (
-                <Group key={g.periodo} header={g.periodo}>
+                <Group
+                  key={g.periodo}
+                  header={g.periodo}
+                  aside={`${g.itens.length} ${g.itens.length === 1 ? 'dose' : 'doses'}`}
+                >
                   <AnimatePresence initial={false}>
                     {g.itens.map((m) => (
                       <motion.div
                         key={m.id}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                        transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                         className="row-wrap"
                       >
                         <DoseRow
@@ -167,26 +185,27 @@ function DoseRow({
 
   return (
     <Row
-      className={clsx('dose', dose && 'is-taken')}
+      className={clsx('dose', dose && 'is-taken', isNext && 'is-next')}
       onClick={onOpen}
-      leading={
-        <span className={clsx('dose-time tnum', atrasado && 'is-late', isNext && 'is-next')}>{med.horario}</span>
-      }
+      leading={<span className={clsx('dose-time tnum', atrasado && 'is-late')}>{med.horario}</span>}
       title={med.nomeMedicamento}
       subtitle={
         <>
           {med.dosagem}
           {pacienteNome && <> · {pacienteNome}</>}
-          {dose ? (
-            <span className="tag tag-green">{hora ? `Tomado às ${hora}` : 'Tomado'}</span>
-          ) : atrasado ? (
-            <span className="tag tag-red">Atrasado</span>
-          ) : isNext ? (
-            <span className="tag tag-blue">Próxima</span>
-          ) : null}
+          {hora && <> · Tomada às {hora}</>}
         </>
       }
-      trailing={<CheckButton checked={!!dose} onCheck={onCheck} label={med.nomeMedicamento} />}
+      trailing={
+        <>
+          {dose ? null : atrasado ? (
+            <Tag tone="red">Atrasada</Tag>
+          ) : isNext ? (
+            <Tag tone="blue">Próxima</Tag>
+          ) : null}
+          <CheckButton checked={!!dose} onCheck={onCheck} label={med.nomeMedicamento} />
+        </>
+      }
     />
   );
 }

@@ -71,15 +71,7 @@ export function iniciais(nome: string) {
   return (first + last).toUpperCase();
 }
 
-/** Cor estável por paciente, a partir da paleta de cores do sistema da Apple. */
-const CORES = ['#FF9500', '#34C759', '#5AC8FA', '#AF52DE', '#FF2D55', '#5856D6', '#FFCC00', '#00C7BE'];
-export function corDoPaciente(id: string) {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
-  return CORES[Math.abs(h) % CORES.length];
-}
-
-/** Retorno tátil discreto, só em momentos que importam (Apple: "Utility"). */
+/** Retorno tátil discreto em celulares, só ao registrar uma dose. */
 export function haptic(ms = 8) {
   try {
     navigator.vibrate?.(ms);
