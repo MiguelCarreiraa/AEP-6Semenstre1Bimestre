@@ -1,4 +1,4 @@
-// Ícones no estilo SF Symbols (traço arredondado, peso regular).
+// Ícones de traço fino e cantos arredondados (estilo Lucide/Feather).
 import type { SVGProps } from 'react';
 
 type P = SVGProps<SVGSVGElement>;
@@ -7,7 +7,7 @@ const base = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 2,
+  strokeWidth: 1.75,
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
   'aria-hidden': true,
@@ -19,15 +19,21 @@ export const PlusIcon = (p: P) => (
   </svg>
 );
 
+export const CloseIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+);
+
 export const ChevronIcon = (p: P) => (
-  <svg {...base} strokeWidth={2.4} {...p}>
+  <svg {...base} {...p}>
     <path d="m9 6 6 6-6 6" />
   </svg>
 );
 
 export const CheckIcon = (p: P) => (
-  <svg {...base} strokeWidth={3} {...p}>
-    <path d="m5 12.5 4.5 4.5L19 7.5" pathLength={1} />
+  <svg {...base} strokeWidth={2.25} {...p}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
   </svg>
 );
 
@@ -38,15 +44,6 @@ export const PillIcon = (p: P) => (
   </svg>
 );
 
-export const PillFillIcon = (p: P) => (
-  <svg viewBox="0 0 24 24" aria-hidden {...p}>
-    <g transform="rotate(-45 12 12)">
-      <rect x="2.5" y="8.5" width="19" height="7" rx="3.5" fill="currentColor" opacity="0.35" />
-      <path d="M12 8.5h6A3.5 3.5 0 0 1 18 15.5h-6z" fill="currentColor" />
-    </g>
-  </svg>
-);
-
 export const PersonIcon = (p: P) => (
   <svg {...base} {...p}>
     <circle cx="12" cy="8" r="4" />
@@ -54,25 +51,18 @@ export const PersonIcon = (p: P) => (
   </svg>
 );
 
-export const PersonFillIcon = (p: P) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...p}>
-    <circle cx="12" cy="8" r="4.5" />
-    <path d="M3.5 21a8.5 8.5 0 0 1 17 0z" />
+export const UsersIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
   </svg>
 );
 
 export const CalendarIcon = (p: P) => (
   <svg {...base} {...p}>
-    <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+    <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
     <path d="M3.5 10h17M8 3v4M16 3v4" />
-  </svg>
-);
-
-export const CalendarFillIcon = (p: P) => (
-  <svg viewBox="0 0 24 24" aria-hidden {...p}>
-    <rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="currentColor" />
-    <rect x="3.5" y="10" width="17" height="10.5" rx="0" fill="var(--card)" opacity="0.35" />
-    <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
@@ -86,6 +76,14 @@ export const ClockIcon = (p: P) => (
 export const PhoneIcon = (p: P) => (
   <svg {...base} {...p}>
     <path d="M5 4h3.5l1.5 4.5-2 1.5a11 11 0 0 0 6 6l1.5-2L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4z" />
+  </svg>
+);
+
+export const CakeIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 20h16M5 20v-6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6" />
+    <path d="M5 16c1.5 1.2 2.5 1.2 3.5 0s2-1.2 3.5 0 2.5 1.2 3.5 0 2-1.2 3.5 0" />
+    <path d="M12 12V8M12 5.2c.6.7.9 1.2.9 1.7a.9.9 0 0 1-1.8 0c0-.5.3-1 .9-1.7z" />
   </svg>
 );
 

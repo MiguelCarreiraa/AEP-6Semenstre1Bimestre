@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { toast } from 'sonner';
 import { ApiError, useStore } from '../store';
 import { Sheet } from '../components/Sheet';
-import { Avatar, BarButton, Field, Group } from '../components/ui';
+import { Avatar, Button, Field } from '../components/ui';
 
 const HORARIO = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -44,18 +44,26 @@ export function NovoMedicamentoSheet({ pacienteId, onClose }: { pacienteId?: str
 
   return (
     <Sheet
-      title="Novo Medicamento"
+      title="Novo medicamento"
+      subtitle="Defina o paciente, a dosagem e o horário diário."
       onClose={onClose}
-      leading={<BarButton onClick={onClose}>Cancelar</BarButton>}
-      trailing={
-        <BarButton bold type="submit" form="form-medicamento" disabled={!valido || saving}>
-          Adicionar
-        </BarButton>
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="form-medicamento" disabled={!valido || saving}>
+            Adicionar medicamento
+          </Button>
+        </>
       }
     >
-      <form id="form-medicamento" onSubmit={submit} noValidate>
-        <Group header="Paciente" footer={errors.pacienteId}>
-          <div className="picker" role="radiogroup" aria-label="Paciente">
+      <form id="form-medicamento" className="form" onSubmit={submit} noValidate>
+        <div className={clsx('field', errors.pacienteId && 'has-error')}>
+          <span className="field-label" id="paciente-label">
+            Paciente
+          </span>
+          <div className="picker" role="radiogroup" aria-labelledby="paciente-label">
             {pacientes.map((p) => (
               <button
                 key={p.id}
@@ -68,27 +76,32 @@ export function NovoMedicamentoSheet({ pacienteId, onClose }: { pacienteId?: str
                   clear('pacienteId');
                 }}
               >
-                <Avatar id={p.id} nome={p.nome} size={44} />
+                <Avatar nome={p.nome} size={24} />
                 <span>{p.nome.split(' ')[0]}</span>
               </button>
             ))}
           </div>
-        </Group>
+          {errors.pacienteId && (
+            <p className="field-msg" role="alert">
+              {errors.pacienteId}
+            </p>
+          )}
+        </div>
 
-        <Group header="Medicamento">
-          <Field
-            label="Nome"
-            placeholder="Losartana"
-            autoCapitalize="words"
-            autoCorrect="off"
-            enterKeyHint="next"
-            value={nome}
-            onChange={(e) => {
-              setNome(e.target.value);
-              clear('nomeMedicamento');
-            }}
-            error={errors.nomeMedicamento}
-          />
+        <Field
+          label="Nome do medicamento"
+          placeholder="Losartana"
+          autoCapitalize="words"
+          autoCorrect="off"
+          enterKeyHint="next"
+          value={nome}
+          onChange={(e) => {
+            setNome(e.target.value);
+            clear('nomeMedicamento');
+          }}
+          error={errors.nomeMedicamento}
+        />
+        <div className="form-row">
           <Field
             label="Dosagem"
             placeholder="50 mg"
@@ -111,7 +124,7 @@ export function NovoMedicamentoSheet({ pacienteId, onClose }: { pacienteId?: str
             }}
             error={errors.horario}
           />
-        </Group>
+        </div>
       </form>
     </Sheet>
   );

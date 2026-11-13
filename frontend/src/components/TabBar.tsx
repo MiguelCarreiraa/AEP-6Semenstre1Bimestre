@@ -1,20 +1,28 @@
+
 import clsx from 'clsx';
-import { CalendarFillIcon, CalendarIcon, PersonFillIcon, PersonIcon } from './Icons';
+import { CalendarIcon, PersonIcon } from './Icons';
 
 export type Tab = 'hoje' | 'pacientes';
 
 const TABS = [
-  { id: 'hoje' as const, label: 'Hoje', Icon: CalendarIcon, ActiveIcon: CalendarFillIcon },
-  { id: 'pacientes' as const, label: 'Pacientes', Icon: PersonIcon, ActiveIcon: PersonFillIcon },
+  { id: 'hoje' as const, label: 'Hoje', Icon: CalendarIcon },
+  { id: 'pacientes' as const, label: 'Pacientes', Icon: PersonIcon },
 ];
 
-/** Tab bar flutuante em material translúcido. Troca de aba não anima: é ação frequente. */
-export function TabBar({ value, onChange }: { value: Tab; onChange: (t: Tab) => void }) {
+/** Tab bar flutuante em material translúcido. */
+export function TabBar({
+  value,
+  onChange,
+}: {
+  value: Tab;
+  onChange: (t: Tab) => void;
+}) {
   return (
     <nav className="tabbar" aria-label="Navegação principal">
       <div className="tabbar-inner" role="tablist">
-        {TABS.map(({ id, label, Icon, ActiveIcon }) => {
+        {TABS.map(({ id, label, Icon }) => {
           const active = value === id;
+
           return (
             <button
               key={id}
@@ -22,10 +30,9 @@ export function TabBar({ value, onChange }: { value: Tab; onChange: (t: Tab) => 
               role="tab"
               aria-selected={active}
               className={clsx('tab', active && 'is-active')}
-              onPointerDown={() => onChange(id)}
               onClick={() => onChange(id)}
             >
-              {active ? <ActiveIcon width={24} height={24} /> : <Icon width={24} height={24} />}
+              <Icon width={24} height={24} />
               <span>{label}</span>
             </button>
           );

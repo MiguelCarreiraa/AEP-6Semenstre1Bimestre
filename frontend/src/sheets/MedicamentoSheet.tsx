@@ -4,8 +4,8 @@ import { useStore } from '../store';
 import { useNow } from '../hooks';
 import { api } from '../api';
 import { Sheet } from '../components/Sheet';
-import { Avatar, BarButton, Button, Group, Row } from '../components/ui';
-import { CheckIcon, ClockIcon, PillFillIcon, TrashIcon } from '../components/Icons';
+import { Avatar, Button, Group, Row, Tag } from '../components/ui';
+import { CheckIcon, ClockIcon, TrashIcon } from '../components/Icons';
 import { doseDeHoje, formatDataHora, formatHora, isSameDay } from '../utils';
 import type { RegistroDose } from '../types';
 
@@ -56,94 +56,102 @@ export function MedicamentoSheet({ id, onClose }: { id: string; onClose: () => v
   }
 
   return (
-    <Sheet title={med.nomeMedicamento} onClose={onClose} trailing={<BarButton bold onClick={onClose}>OK</BarButton>}>
-      <div className="hero">
-        <div className="hero-icon">
-          <PillFillIcon width={36} height={36} />
-        </div>
-        <h3>{med.nomeMedicamento}</h3>
-        <p>{med.dosagem}</p>
-      </div>
-
-      <div className="sheet-actions">
+    <Sheet
+      title={med.nomeMedicamento}
+      subtitle={med.dosagem}
+      onClose={onClose}
+      footer={
+        <>
+          <Button
+            variant="danger"
+            className="footer-start"
+            onClick={() => {
+              onClose();
+              remover(med.id);
+            }}
+          >
+            <TrashIcon width={16} height={16} />
+            Remover
+          </Button>
+          <Button variant="secondary" onClick={onClose}>
+            Fechar
+          </Button>
+        </>
+      }
+    >
+      <div className="sheet-stack">
         {dose ? (
           <div className="taken-banner" role="status">
             <CheckIcon width={18} height={18} />
             {formatHora(dose) ? `Dose de hoje tomada às ${formatHora(dose)}` : 'Dose de hoje registrada'}
           </div>
         ) : (
-          <Button className="btn-large" onClick={() => marcar(med.id)}>
-            Marcar como tomado
+          <Button size="lg" onClick={() => marcar(med.id)}>
+            <CheckIcon width={18} height={18} />
+            Registrar dose de hoje
           </Button>
         )}
-      </div>
 
-      {paciente && (
-        <Group header="Paciente">
-          <Row
-            leading={<Avatar id={paciente.id} nome={paciente.nome} size={32} />}
-            title={paciente.nome}
-            chevron
-            onClick={() => openSheet({ type: 'paciente', id: paciente.id })}
-          />
-        </Group>
-      )}
-
-      <Group header="Horário" footer="O medicamento aparece na agenda todos os dias neste horário.">
-        <div className="row">
-          <span className="row-leading icon-tile" style={{ ['--tile' as string]: 'var(--orange)' }}>
-            <ClockIcon width={18} height={18} />
-          </span>
-          <label className="row-text row-title" htmlFor="horario-edit">
-            Todos os dias
-          </label>
-          <input
-            id="horario-edit"
-            className="inline-time tnum"
-            type="time"
-            value={horario}
-            onChange={(e) => setHorario(e.target.value)}
-          />
-        </div>
-        {mudouHorario && (
-          <div className="row row-actions">
-            <BarButton onClick={() => setHorario(med.horario)}>Desfazer</BarButton>
-            <BarButton bold onClick={salvarHorario} disabled={saving}>
-              Salvar horário
-            </BarButton>
-          </div>
+        {paciente && (
+          <Group header="Paciente">
+            <Row
+              leading={<Avatar nome={paciente.nome} size={32} />}
+              title={paciente.nome}
+              subtitle="Ver detalhes do paciente"
+              chevron
+              onClick={() => openSheet({ type: 'paciente', id: paciente.id })}
+            />
+          </Group>
         )}
-      </Group>
 
-      <Group header="Histórico de doses" footer={doses.length > 8 ? `Mostrando as 8 mais recentes de ${doses.length}.` : undefined}>
-        {doses.length === 0 ? (
+        <Group header="Horário" footer="O medicamento aparece na agenda todos os dias neste horário.">
           <div className="row">
-            <span className="row-text row-subtitle">Nenhuma dose registrada ainda.</span>
+            <span className="row-leading icon-tile">
+              <ClockIcon width={18} height={18} />
+            </span>
+            <label className="row-text row-title" htmlFor="horario-edit">
+              Todos os dias às
+            </label>
+            <input
+              id="horario-edit"
+              className="inline-time tnum"
+              type="time"
+              value={horario}
+              onChange={(e) => setHorario(e.target.value)}
+            />
           </div>
-        ) : (
-          doses.slice(0, 8).map((d, i) => (
-            <div className="row" key={d.getTime() + '-' + i}>
-              <span className="row-leading dot" />
-              <span className="row-text row-title tnum">{formatDataHora(d)}</span>
-              {isSameDay(d, now) && <span className="tag tag-green">Hoje</span>}
+          {mudouHorario && (
+            <div className="row row-actions">
+              <Button variant="ghost" onClick={() => setHorario(med.horario)}>
+                Desfazer
+              </Button>
+              <Button onClick={salvarHorario} disabled={saving}>
+                Salvar horário
+              </Button>
             </div>
-          ))
-        )}
-      </Group>
+          )}
+        </Group>
 
-      <Group>
-        <button
-          type="button"
-          className="row is-pressable row-destructive"
-          onClick={() => {
-            onClose();
-            remover(med.id);
-          }}
+        <Group
+          header="Histórico de doses"
+          aside={doses.length > 0 ? `${doses.length} ${doses.length === 1 ? 'registro' : 'registros'}` : undefined}
+          footer={doses.length > 8 ? `Mostrando as 8 mais recentes de ${doses.length}.` : undefined}
         >
-          <TrashIcon width={18} height={18} />
-          Remover medicamento
-        </button>
-      </Group>
+          {doses.length === 0 ? (
+            <div className="row">
+              <span className="row-text row-subtitle">Nenhuma dose registrada ainda.</span>
+            </div>
+          ) : (
+            doses.slice(0, 8).map((d, i) => (
+              <div className="row" key={d.getTime() + '-' + i}>
+                <span className="row-leading dot" />
+                <span className="row-text row-title tnum">{formatDataHora(d)}</span>
+                {isSameDay(d, now) && <Tag tone="green">Hoje</Tag>}
+              </div>
+            ))
+          )}
+        </Group>
+      </div>
     </Sheet>
   );
 }

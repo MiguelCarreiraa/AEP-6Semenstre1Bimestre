@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { ApiError, useStore } from '../store';
 import { Sheet } from '../components/Sheet';
-import { BarButton, Field, Group } from '../components/ui';
+import { Button, Field } from '../components/ui';
 
 export function NovoPacienteSheet({ onClose }: { onClose: () => void }) {
   const cadastrar = useStore((s) => s.cadastrarPaciente);
@@ -23,7 +23,7 @@ export function NovoPacienteSheet({ onClose }: { onClose: () => void }) {
     try {
       const p = await cadastrar({ nome: nome.trim(), contato: contato.trim(), dataNascimento: nascimento || null });
       toast.success(`${p.nome} cadastrado`, {
-        action: { label: 'Adicionar remédio', onClick: () => openSheet({ type: 'novo-medicamento', pacienteId: p.id }) },
+        action: { label: 'Adicionar medicamento', onClick: () => openSheet({ type: 'novo-medicamento', pacienteId: p.id }) },
       });
       onClose();
     } catch (err) {
@@ -35,54 +35,57 @@ export function NovoPacienteSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet
-      title="Novo Paciente"
+      title="Novo paciente"
+      subtitle="Preencha os dados de quem vai receber os medicamentos."
       onClose={onClose}
-      leading={<BarButton onClick={onClose}>Cancelar</BarButton>}
-      trailing={
-        <BarButton bold type="submit" form="form-paciente" disabled={!valido || saving}>
-          Adicionar
-        </BarButton>
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="form-paciente" disabled={!valido || saving}>
+            Cadastrar paciente
+          </Button>
+        </>
       }
     >
-      <form id="form-paciente" onSubmit={submit} noValidate>
-        <Group>
-          <Field
-            label="Nome"
-            placeholder="Maria da Silva"
-            autoComplete="name"
-            autoCapitalize="words"
-            enterKeyHint="next"
-            value={nome}
-            onChange={(e) => {
-              setNome(e.target.value);
-              setErrors(({ nome: _, ...rest }) => rest);
-            }}
-            error={errors.nome}
-          />
-          <Field
-            label="Contato"
-            placeholder="(44) 99999-0000"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            enterKeyHint="next"
-            value={contato}
-            onChange={(e) => {
-              setContato(e.target.value);
-              setErrors(({ contato: _, ...rest }) => rest);
-            }}
-            error={errors.contato}
-          />
-          <Field
-            label="Nascimento"
-            type="date"
-            max={hoje}
-            value={nascimento}
-            onChange={(e) => setNascimento(e.target.value)}
-            error={errors.dataNascimento}
-            hint="Opcional"
-          />
-        </Group>
+      <form id="form-paciente" className="form" onSubmit={submit} noValidate>
+        <Field
+          label="Nome completo"
+          placeholder="Maria da Silva"
+          autoComplete="name"
+          autoCapitalize="words"
+          enterKeyHint="next"
+          value={nome}
+          onChange={(e) => {
+            setNome(e.target.value);
+            setErrors(({ nome: _, ...rest }) => rest);
+          }}
+          error={errors.nome}
+        />
+        <Field
+          label="Contato"
+          placeholder="(44) 99999-0000"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          enterKeyHint="next"
+          value={contato}
+          onChange={(e) => {
+            setContato(e.target.value);
+            setErrors(({ contato: _, ...rest }) => rest);
+          }}
+          error={errors.contato}
+        />
+        <Field
+          label="Data de nascimento"
+          type="date"
+          max={hoje}
+          value={nascimento}
+          onChange={(e) => setNascimento(e.target.value)}
+          error={errors.dataNascimento}
+          hint="Opcional"
+        />
       </form>
     </Sheet>
   );

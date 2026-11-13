@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Toaster } from 'sonner';
 import { useStore, type Sheet } from './store';
-import { TabBar, type Tab } from './components/TabBar';
+import { Sidebar, type Tab } from './components/Sidebar';
 import { Scrim } from './components/Sheet';
 import { Button, EmptyState } from './components/ui';
 import { WifiOffIcon } from './components/Icons';
@@ -45,24 +45,27 @@ export default function App() {
 
   return (
     <>
-      <main className="app" inert={sheet ? true : undefined}>
-        {status === 'loading' ? (
-          <Skeleton />
-        ) : status === 'error' ? (
-          <EmptyState
-            icon={<WifiOffIcon width={40} height={40} />}
-            title="Sem conexão com a API"
-            message="Verifique se o backend Spring está rodando em localhost:8080 e o MongoDB está ativo."
-            action={<Button onClick={load}>Tentar novamente</Button>}
-          />
-        ) : tab === 'hoje' ? (
-          <HojeScreen />
-        ) : (
-          <PacientesScreen />
-        )}
-      </main>
-
-      {status === 'ready' && <TabBar value={tab} onChange={setTab} />}
+      <div className="shell" inert={sheet ? true : undefined}>
+        {status === 'ready' && <Sidebar value={tab} onChange={setTab} />}
+        <main className="main">
+          <div className="content">
+            {status === 'loading' ? (
+              <Skeleton />
+            ) : status === 'error' ? (
+              <EmptyState
+                icon={<WifiOffIcon width={28} height={28} />}
+                title="Sem conexão com a API"
+                message="Verifique se o backend Spring está rodando em localhost:8080 e o MongoDB está ativo."
+                action={<Button onClick={load}>Tentar novamente</Button>}
+              />
+            ) : tab === 'hoje' ? (
+              <HojeScreen />
+            ) : (
+              <PacientesScreen />
+            )}
+          </div>
+        </main>
+      </div>
 
       <AnimatePresence>{sheet && <Scrim key="scrim" onClick={close} />}</AnimatePresence>
       <AnimatePresence>
@@ -71,7 +74,13 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <Toaster position="top-center" theme="system" offset={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)' }} />
+      <Toaster
+        position="bottom-right"
+        theme="light"
+        offset={16}
+        mobileOffset={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)', left: 12, right: 12 }}
+        toastOptions={{ classNames: { toast: 'toast' } }}
+      />
     </>
   );
 }
@@ -93,7 +102,7 @@ function Skeleton() {
   return (
     <div className="skeleton" aria-busy="true" aria-label="Carregando">
       <div className="sk sk-title" />
-      <div className="sk sk-card" />
+      <div className="sk sk-stats" />
       <div className="sk sk-list" />
     </div>
   );
